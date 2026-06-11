@@ -30,6 +30,7 @@ export async function updateStudentAction(formData: FormData) {
     data: { firstName, lastName, email },
   });
   revalidatePath("/alumnos");
+  revalidatePath(`/alumnos/${id}`);
 }
 
 export async function deleteStudentAction(formData: FormData) {

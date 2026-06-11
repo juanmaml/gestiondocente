@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
@@ -45,8 +46,13 @@ export default async function AlumnosPage() {
             <tbody className="divide-y divide-gray-100">
               {students.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">
-                    {s.lastName}, {s.firstName}
+                  <td className="px-4 py-2.5">
+                    <Link
+                      href={`/alumnos/${s.id}`}
+                      className="font-medium text-gray-900 hover:text-indigo-600 hover:underline"
+                    >
+                      {s.lastName}, {s.firstName}
+                    </Link>
                   </td>
                   <td className="px-4 py-2.5 text-gray-500">{s.email ?? "—"}</td>
                   <td className="px-4 py-2.5">
