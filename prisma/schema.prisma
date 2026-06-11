@@ -1,0 +1,270 @@
+// Modelo de datos - Gestión Docente
+// Estructura principal: Asignatura -> Clase -> Alumnos
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Usuario (docente)
+// ─────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  academicYears AcademicYear[]
+  subjects      Subject[]
+  students      Student[]
+}
+
+// ─────────────────────────────────────────────
+// Curso académico
+// ─────────────────────────────────────────────
+model AcademicYear {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String // p.ej. "2025-2026"
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects Subject[]
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// Asignatura
+// ─────────────────────────────────────────────
+model Subject {
+  id             String   @id @default(cuid())
+  userId         String
+  academicYearId String
+  name           String
+  color          String   @default("#3b82f6")
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  classGroups  ClassGroup[]
+
+  @@index([userId])
+  @@index([academicYearId])
+}
+
+// ─────────────────────────────────────────────
+// Clase (grupo) - p.ej. "1º ESO A"
+// ─────────────────────────────────────────────
+model ClassGroup {
+  id        String   @id @default(cuid())
+  subjectId String
+  name      String
+  createdAt DateTime @default(now())
+
+  subject        Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  enrollments    ClassEnrollment[]
+  scheduleEntries ScheduleEntry[]
+  sessions       ClassSession[]
+  studentNotes   StudentNote[]
+  assessments    AssessmentItem[]
+  studentGroups  StudentGroup[]
+
+  @@index([subjectId])
+}
+
+// ─────────────────────────────────────────────
+// Alumno
+// ─────────────────────────────────────────────
+model Student {
+  id        String   @id @default(cuid())
+  userId    String
+  firstName String
+  lastName  String
+  email     String?
+  createdAt DateTime @default(now())
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+  notes       StudentNote[]
+  grades      Grade[]
+  memberships GroupMembership[]
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// Matrícula (alumno <-> clase)
+// ─────────────────────────────────────────────
+model ClassEnrollment {
+  id           String   @id @default(cuid())
+  classGroupId String
+  studentId    String
+  createdAt    DateTime @default(now())
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classGroupId, studentId])
+  @@index([classGroupId])
+  @@index([studentId])
+}
+
+// ─────────────────────────────────────────────
+// Entrada de horario semanal
+// dayOfWeek: 1 = lunes ... 5 = viernes (ISO)
+// ─────────────────────────────────────────────
+model ScheduleEntry {
+  id           String @id @default(cuid())
+  classGroupId String
+  dayOfWeek    Int
+  startTime    String // "09:00"
+  endTime      String // "10:00"
+
+  classGroup ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+
+  @@index([classGroupId])
+}
+
+// ─────────────────────────────────────────────
+// Sesión de clase (clase concreta en fecha + hora)
+// ─────────────────────────────────────────────
+model ClassSession {
+  id               String   @id @default(cuid())
+  classGroupId     String
+  date             DateTime // día de la sesión
+  startTime        String // "09:00"
+  endTime          String // "10:00"
+  plannedContent   String? // contenido previsto
+  deliveredContent String? // contenido impartido
+  homework         String? // deberes / tareas
+  generalNotes     String? // anotaciones generales
+  privateNotes     String? // anotaciones privadas del docente
+  createdAt        DateTime @default(now())
+
+  classGroup   ClassGroup    @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  studentNotes StudentNote[]
+
+  @@index([classGroupId])
+  @@index([date])
+}
+
+// ─────────────────────────────────────────────
+// Anotación sobre un alumno concreto
+// (asociada a alumno + clase + fecha; opcionalmente a sesión)
+// ─────────────────────────────────────────────
+model StudentNote {
+  id           String   @id @default(cuid())
+  studentId    String
+  classGroupId String
+  sessionId    String?
+  date         DateTime
+  type         String   @default("general") // positiva, negativa, incidencia, general
+  content      String
+  createdAt    DateTime @default(now())
+
+  student    Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classGroup ClassGroup    @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  session    ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([classGroupId])
+  @@index([sessionId])
+}
+
+// ─────────────────────────────────────────────
+// Elemento evaluable (tarea, examen, trabajo...)
+// ─────────────────────────────────────────────
+model AssessmentItem {
+  id           String   @id @default(cuid())
+  classGroupId String
+  title        String
+  type         String   @default("tarea") // tarea, examen, trabajo, actividad, otro
+  date         DateTime?
+  description  String?
+  maxScore     Float    @default(10)
+  weight       Float? // peso opcional
+  term         String? // periodo de evaluación opcional (1ª eval, 2ª eval...)
+  isGroup      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  classGroup ClassGroup   @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  grades     Grade[]
+  groupGrades GroupGrade[]
+
+  @@index([classGroupId])
+}
+
+// ─────────────────────────────────────────────
+// Calificación individual
+// ─────────────────────────────────────────────
+model Grade {
+  id               String  @id @default(cuid())
+  assessmentItemId String
+  studentId        String
+  score            Float?
+  observation      String?
+
+  assessmentItem AssessmentItem @relation(fields: [assessmentItemId], references: [id], onDelete: Cascade)
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentItemId, studentId])
+  @@index([assessmentItemId])
+  @@index([studentId])
+}
+
+// ─────────────────────────────────────────────
+// Grupo de trabajo dentro de una clase
+// ─────────────────────────────────────────────
+model StudentGroup {
+  id           String   @id @default(cuid())
+  classGroupId String
+  name         String
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  classGroup  ClassGroup        @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  memberships GroupMembership[]
+  groupGrades GroupGrade[]
+
+  @@index([classGroupId])
+}
+
+model GroupMembership {
+  id             String @id @default(cuid())
+  studentGroupId String
+  studentId      String
+
+  studentGroup StudentGroup @relation(fields: [studentGroupId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentGroupId, studentId])
+  @@index([studentGroupId])
+  @@index([studentId])
+}
+
+// ─────────────────────────────────────────────
+// Calificación grupal (nota base del grupo para un evaluable)
+// ─────────────────────────────────────────────
+model GroupGrade {
+  id               String  @id @default(cuid())
+  assessmentItemId String
+  studentGroupId   String
+  score            Float?
+
+  assessmentItem AssessmentItem @relation(fields: [assessmentItemId], references: [id], onDelete: Cascade)
+  studentGroup   StudentGroup   @relation(fields: [studentGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentItemId, studentGroupId])
+  @@index([assessmentItemId])
+  @@index([studentGroupId])
+}

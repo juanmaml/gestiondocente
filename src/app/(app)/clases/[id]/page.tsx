@@ -1,0 +1,676 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/session";
+import {
+  formatDateLong,
+  formatDateShort,
+  fromDateKey,
+  toDateKey,
+} from "@/lib/dates";
+import { readableText } from "@/lib/colors";
+import { adjacentSlots, defaultSlot } from "@/lib/sessions";
+import { SessionEditor } from "./SessionEditor";
+import { StudentNotesPanel } from "./StudentNotesPanel";
+import { EnrollButtons } from "./EnrollPanel";
+import { NewAssessmentButton } from "./NewAssessmentButton";
+import { GradesEditor } from "./GradesEditor";
+import { GroupGradesEditor } from "./GroupGradesEditor";
+import { NewGroupButton, GroupCard } from "./GroupsPanel";
+import { MonthCalendar, type DayMarks } from "./MonthCalendar";
+import {
+  deleteAssessmentAction,
+  unenrollStudentAction,
+} from "./actions";
+
+const TABS = [
+  { key: "sesion", label: "Sesión" },
+  { key: "alumnos", label: "Alumnos" },
+  { key: "evaluaciones", label: "Evaluaciones" },
+  { key: "grupos", label: "Grupos" },
+  { key: "historial", label: "Historial" },
+  { key: "mes", label: "Mes" },
+] as const;
+
+export default async function ClassPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    date?: string;
+    start?: string;
+    end?: string;
+    eval?: string;
+    month?: string;
+  }>;
+}) {
+  const user = await requireUser();
+  const { id } = await params;
+  const sp = await searchParams;
+
+  const cls = await prisma.classGroup.findFirst({
+    where: { id, subject: { userId: user.id } },
+    include: {
+      subject: true,
+      scheduleEntries: true,
+      enrollments: {
+        include: { student: true },
+        orderBy: [
+          { student: { lastName: "asc" } },
+          { student: { firstName: "asc" } },
+        ],
+      },
+    },
+  });
+  if (!cls) notFound();
+
+  const students = cls.enrollments.map((e) => e.student);
+  const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "sesion";
+  const color = cls.subject.color;
+
+  // ── Resolución de la sesión mostrada ─────────────────────
+  // Prioridad: fecha+hora de la URL > franja por defecto (hoy/próxima/última).
+  let slot: { dateKey: string; startTime: string; endTime: string } | null = null;
+  if (sp.date && sp.start && sp.end) {
+    slot = { dateKey: sp.date, startTime: sp.start, endTime: sp.end };
+  } else if (sp.date) {
+    // Fecha sin hora (p.ej. desde el calendario mensual): busca sesión o franja de ese día.
+    const d = fromDateKey(sp.date);
+    const dow = d.getDay() === 0 ? 7 : d.getDay();
+    const entry = cls.scheduleEntries
+      .filter((e) => e.dayOfWeek === dow)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+    if (entry) {
+      slot = { dateKey: sp.date, startTime: entry.startTime, endTime: entry.endTime };
+    } else {
+      slot = { dateKey: sp.date, startTime: "09:00", endTime: "10:00" };
+    }
+  } else {
+    slot = defaultSlot(cls.scheduleEntries);
+  }
+
+  // Datos de la sesión seleccionada.
+  let session = null;
+  let sessionNotes: {
+    id: string;
+    studentId: string;
+    type: string;
+    content: string;
+    studentName: string;
+  }[] = [];
+
+  if (slot) {
+    const dayStart = fromDateKey(slot.dateKey);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    session = await prisma.classSession.findFirst({
+      where: {
+        classGroupId: cls.id,
+        startTime: slot.startTime,
+        date: { gte: dayStart, lt: dayEnd },
+      },
+    });
+    const notes = await prisma.studentNote.findMany({
+      where: {
+        classGroupId: cls.id,
+        date: { gte: dayStart, lt: dayEnd },
+      },
+      include: { student: true },
+      orderBy: { createdAt: "desc" },
+    });
+    sessionNotes = notes.map((n) => ({
+      id: n.id,
+      studentId: n.studentId,
+      type: n.type,
+      content: n.content,
+      studentName: `${n.student.firstName} ${n.student.lastName}`,
+    }));
+  }
+
+  const { prev, next } = slot
+    ? adjacentSlots(cls.scheduleEntries, slot.dateKey, slot.startTime)
+    : { prev: null, next: null };
+
+  const slotHref = (s: { dateKey: string; startTime: string; endTime: string }) =>
+    `/clases/${cls.id}?date=${s.dateKey}&start=${s.startTime}&end=${s.endTime}`;
+
+  const tabHref = (key: string) => {
+    const base = `/clases/${cls.id}?tab=${key}`;
+    return slot
+      ? `${base}&date=${slot.dateKey}&start=${slot.startTime}&end=${slot.endTime}`
+      : base;
+  };
+
+  // ── Datos por pestaña ────────────────────────────────────
+  let assessments: Awaited<ReturnType<typeof loadAssessments>> = [];
+  if (tab === "evaluaciones") assessments = await loadAssessments(cls.id);
+
+  let groups: {
+    id: string;
+    name: string;
+    notes: string | null;
+    memberIds: string[];
+    memberNames: string[];
+  }[] = [];
+  if (tab === "grupos" || tab === "evaluaciones") {
+    const raw = await prisma.studentGroup.findMany({
+      where: { classGroupId: cls.id },
+      orderBy: { name: "asc" },
+      include: { memberships: { include: { student: true } } },
+    });
+    groups = raw.map((g) => ({
+      id: g.id,
+      name: g.name,
+      notes: g.notes,
+      memberIds: g.memberships.map((m) => m.studentId),
+      memberNames: g.memberships.map(
+        (m) => `${m.student.firstName} ${m.student.lastName}`
+      ),
+    }));
+  }
+
+  let history: Awaited<ReturnType<typeof loadHistory>> = [];
+  if (tab === "historial") history = await loadHistory(cls.id);
+
+  let monthData: {
+    year: number;
+    month: number;
+    marks: Map<string, DayMarks>;
+  } | null = null;
+  if (tab === "mes") {
+    const now = new Date();
+    let y = now.getFullYear();
+    let m = now.getMonth();
+    if (sp.month && /^\d{4}-\d{2}$/.test(sp.month)) {
+      const [yy, mm] = sp.month.split("-").map(Number);
+      y = yy;
+      m = mm - 1;
+    }
+    monthData = { year: y, month: m, marks: await loadMonthMarks(cls.id, y, m) };
+  }
+
+  return (
+    <div className="p-6">
+      {/* Cabecera de la clase */}
+      <div
+        className="mb-5 rounded-xl p-5"
+        style={{ background: color, color: readableText(color) }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm opacity-80">{cls.subject.name}</p>
+            <h1 className="text-2xl font-bold">{cls.name}</h1>
+          </div>
+          <div className="text-right text-sm opacity-90">
+            <p>{students.length} alumno(s)</p>
+            <Link href="/calendario" className="underline opacity-80 hover:opacity-100">
+              ← Volver al calendario
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Pestañas */}
+      <div className="mb-5 flex flex-wrap gap-1 border-b border-gray-200">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={tabHref(t.key)}
+            className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${
+              tab === t.key
+                ? "border-b-2 border-indigo-600 text-indigo-700"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Pestaña Sesión ── */}
+      {tab === "sesion" && (
+        <div>
+          {!slot ? (
+            <div className="card flex flex-col items-center gap-2 px-6 py-12 text-center">
+              <p className="font-medium text-gray-700">
+                Esta clase no tiene horario configurado
+              </p>
+              <Link href="/horario" className="btn-primary mt-1">
+                Configurar horario
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Navegación de sesiones */}
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold capitalize text-gray-900">
+                    {formatDateLong(fromDateKey(slot.dateKey))}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {slot.startTime} – {slot.endTime}
+                    {session ? "" : " · sesión sin guardar todavía"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {prev ? (
+                    <Link href={slotHref(prev)} className="btn-secondary">
+                      ← Sesión anterior
+                    </Link>
+                  ) : (
+                    <span className="btn-secondary opacity-40">← Sesión anterior</span>
+                  )}
+                  <Link href={`/clases/${cls.id}`} className="btn-secondary">
+                    Hoy
+                  </Link>
+                  {next ? (
+                    <Link href={slotHref(next)} className="btn-secondary">
+                      Próxima sesión →
+                    </Link>
+                  ) : (
+                    <span className="btn-secondary opacity-40">Próxima sesión →</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-3">
+                <div className="card p-4 lg:col-span-2">
+                  <SessionEditor
+                    classGroupId={cls.id}
+                    date={slot.dateKey}
+                    startTime={slot.startTime}
+                    endTime={slot.endTime}
+                    session={session}
+                  />
+                </div>
+                <StudentNotesPanel
+                  classGroupId={cls.id}
+                  date={slot.dateKey}
+                  sessionId={session?.id ?? null}
+                  students={students}
+                  notes={sessionNotes}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña Alumnos ── */}
+      {tab === "alumnos" && (
+        <AlumnosTab classGroupId={cls.id} students={students} userId={user.id} />
+      )}
+
+      {/* ── Pestaña Evaluaciones ── */}
+      {tab === "evaluaciones" && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              {assessments.length} elemento(s) evaluable(s)
+            </p>
+            <NewAssessmentButton classGroupId={cls.id} />
+          </div>
+          {assessments.length === 0 ? (
+            <div className="card px-6 py-12 text-center text-gray-400">
+              Crea tareas, exámenes o trabajos para evaluar a tus alumnos.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {assessments.map((a) => {
+                const expanded = sp.eval === a.id;
+                return (
+                  <div key={a.id} className="card p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900">{a.title}</h3>
+                          <span className="chip bg-gray-100 capitalize text-gray-600">
+                            {a.type}
+                          </span>
+                          {a.isGroup && (
+                            <span className="chip bg-violet-50 text-violet-700">
+                              Grupal
+                            </span>
+                          )}
+                          {a.term && (
+                            <span className="chip bg-sky-50 text-sky-700">{a.term}</span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-sm text-gray-500">
+                          {a.date ? formatDateShort(a.date) + " · " : ""}
+                          Máx. {a.maxScore}
+                          {a.weight != null ? ` · Peso ${a.weight}%` : ""}
+                          {a.gradedCount > 0
+                            ? ` · ${a.gradedCount} calificación(es)`
+                            : ""}
+                        </p>
+                        {a.description && (
+                          <p className="mt-1 text-sm text-gray-600">{a.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/clases/${cls.id}?tab=evaluaciones${expanded ? "" : `&eval=${a.id}`}`}
+                          className="text-sm font-medium text-indigo-600 hover:underline"
+                        >
+                          {expanded ? "Cerrar" : "Calificar"}
+                        </Link>
+                        <form action={deleteAssessmentAction}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <input type="hidden" name="classGroupId" value={cls.id} />
+                          <button className="text-xs text-red-500 hover:underline">
+                            Eliminar
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+
+                    {expanded && (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        {a.isGroup ? (
+                          <GroupGradesEditor
+                            classGroupId={cls.id}
+                            assessmentItemId={a.id}
+                            maxScore={a.maxScore}
+                            groups={groups.map((g) => ({
+                              id: g.id,
+                              name: g.name,
+                              groupScore:
+                                a.groupGrades.find((gg) => gg.studentGroupId === g.id)
+                                  ?.score ?? null,
+                              members: g.memberIds.map((sid) => {
+                                const st = students.find((s) => s.id === sid);
+                                return {
+                                  studentId: sid,
+                                  name: st
+                                    ? `${st.lastName}, ${st.firstName}`
+                                    : "(alumno)",
+                                  score:
+                                    a.grades.find((gr) => gr.studentId === sid)
+                                      ?.score ?? null,
+                                };
+                              }),
+                            }))}
+                          />
+                        ) : (
+                          <GradesEditor
+                            classGroupId={cls.id}
+                            assessmentItemId={a.id}
+                            maxScore={a.maxScore}
+                            rows={students.map((s) => {
+                              const g = a.grades.find((gr) => gr.studentId === s.id);
+                              return {
+                                studentId: s.id,
+                                name: `${s.lastName}, ${s.firstName}`,
+                                score: g?.score ?? null,
+                                observation: g?.observation ?? null,
+                              };
+                            })}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña Grupos ── */}
+      {tab === "grupos" && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Grupos de trabajo para evaluaciones grupales (Tecnología, proyectos…)
+            </p>
+            <NewGroupButton classGroupId={cls.id} />
+          </div>
+          {groups.length === 0 ? (
+            <div className="card px-6 py-12 text-center text-gray-400">
+              Aún no hay grupos de trabajo en esta clase.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {groups.map((g) => (
+                <GroupCard
+                  key={g.id}
+                  classGroupId={cls.id}
+                  group={g}
+                  students={students}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña Historial ── */}
+      {tab === "historial" && (
+        <div>
+          {history.length === 0 ? (
+            <div className="card px-6 py-12 text-center text-gray-400">
+              Todavía no hay sesiones guardadas en esta clase.
+            </div>
+          ) : (
+            <ol className="relative ml-3 space-y-6 border-l-2 border-gray-200 pl-6">
+              {history.map((h) => (
+                <li key={h.id} className="relative">
+                  <span
+                    className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full border-2 border-white"
+                    style={{ background: color }}
+                  />
+                  <Link
+                    href={`/clases/${cls.id}?date=${toDateKey(h.date)}&start=${h.startTime}&end=${h.endTime}`}
+                    className="text-sm font-semibold capitalize text-gray-900 hover:text-indigo-600"
+                  >
+                    {formatDateLong(h.date)} · {h.startTime}–{h.endTime}
+                  </Link>
+                  <div className="mt-1 space-y-1 text-sm text-gray-600">
+                    {h.deliveredContent && (
+                      <p>
+                        <span className="font-medium text-emerald-700">Impartido:</span>{" "}
+                        {h.deliveredContent}
+                      </p>
+                    )}
+                    {!h.deliveredContent && h.plannedContent && (
+                      <p>
+                        <span className="font-medium text-indigo-700">Previsto:</span>{" "}
+                        {h.plannedContent}
+                      </p>
+                    )}
+                    {h.homework && (
+                      <p>
+                        <span className="font-medium text-amber-700">Deberes:</span>{" "}
+                        {h.homework}
+                      </p>
+                    )}
+                    {h.generalNotes && (
+                      <p className="text-gray-500">{h.generalNotes}</p>
+                    )}
+                    {h.noteCount > 0 && (
+                      <p className="text-xs text-gray-400">
+                        {h.noteCount} anotación(es) sobre alumnos
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña Mes ── */}
+      {tab === "mes" && monthData && (
+        <MonthCalendar
+          classGroupId={cls.id}
+          year={monthData.year}
+          month={monthData.month}
+          marks={monthData.marks}
+          scheduledDows={new Set(cls.scheduleEntries.map((e) => e.dayOfWeek))}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Pestaña Alumnos (server component auxiliar) ────────────
+async function AlumnosTab({
+  classGroupId,
+  students,
+  userId,
+}: {
+  classGroupId: string;
+  students: { id: string; firstName: string; lastName: string; email: string | null }[];
+  userId: string;
+}) {
+  const enrolledIds = new Set(students.map((s) => s.id));
+  const allStudents = await prisma.student.findMany({
+    where: { userId },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+  const available = allStudents.filter((s) => !enrolledIds.has(s.id));
+
+  // Últimas anotaciones por alumno en esta clase.
+  const recentNotes = await prisma.studentNote.findMany({
+    where: { classGroupId },
+    orderBy: { date: "desc" },
+    take: 200,
+  });
+  const noteCount = new Map<string, number>();
+  for (const n of recentNotes) {
+    noteCount.set(n.studentId, (noteCount.get(n.studentId) ?? 0) + 1);
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-500">{students.length} alumno(s) matriculado(s)</p>
+        <EnrollButtons classGroupId={classGroupId} available={available} />
+      </div>
+      {students.length === 0 ? (
+        <div className="card px-6 py-12 text-center text-gray-400">
+          Matricula alumnos existentes o crea nuevos directamente en esta clase.
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <tr>
+                <th className="px-4 py-2.5">Alumno</th>
+                <th className="px-4 py-2.5">Email</th>
+                <th className="px-4 py-2.5">Anotaciones</th>
+                <th className="px-4 py-2.5"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {students.map((s) => (
+                <tr key={s.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                    {s.lastName}, {s.firstName}
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-500">{s.email ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-gray-500">
+                    {noteCount.get(s.id) ?? 0}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <form action={unenrollStudentAction}>
+                      <input type="hidden" name="classGroupId" value={classGroupId} />
+                      <input type="hidden" name="studentId" value={s.id} />
+                      <button className="text-xs text-red-500 hover:underline">
+                        Quitar de la clase
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Carga de datos auxiliar ────────────────────────────────
+async function loadAssessments(classGroupId: string) {
+  return prisma.assessmentItem
+    .findMany({
+      where: { classGroupId },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      include: { grades: true, groupGrades: true },
+    })
+    .then((items) =>
+      items.map((a) => ({
+        ...a,
+        gradedCount: a.grades.filter((g) => g.score != null).length,
+      }))
+    );
+}
+
+async function loadHistory(classGroupId: string) {
+  const sessions = await prisma.classSession.findMany({
+    where: { classGroupId },
+    orderBy: [{ date: "desc" }, { startTime: "desc" }],
+    include: { _count: { select: { studentNotes: true } } },
+  });
+  return sessions.map((s) => ({
+    id: s.id,
+    date: s.date,
+    startTime: s.startTime,
+    endTime: s.endTime,
+    plannedContent: s.plannedContent,
+    deliveredContent: s.deliveredContent,
+    homework: s.homework,
+    generalNotes: s.generalNotes,
+    noteCount: s._count.studentNotes,
+  }));
+}
+
+async function loadMonthMarks(classGroupId: string, year: number, month: number) {
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 1);
+
+  const [sessions, notes, assessments] = await Promise.all([
+    prisma.classSession.findMany({
+      where: { classGroupId, date: { gte: from, lt: to } },
+    }),
+    prisma.studentNote.findMany({
+      where: { classGroupId, date: { gte: from, lt: to } },
+    }),
+    prisma.assessmentItem.findMany({
+      where: { classGroupId, date: { gte: from, lt: to } },
+    }),
+  ]);
+
+  const marks = new Map<string, DayMarks>();
+  const get = (d: Date) => {
+    const key = toDateKey(d);
+    let m = marks.get(key);
+    if (!m) {
+      m = {};
+      marks.set(key, m);
+    }
+    return m;
+  };
+
+  for (const s of sessions) {
+    const m = get(s.date);
+    if (s.plannedContent || s.deliveredContent || s.generalNotes || s.privateNotes)
+      m.hasSession = true;
+    if (s.homework) m.hasAssessment = m.hasAssessment ?? false;
+  }
+  for (const n of notes) {
+    const m = get(n.date);
+    m.hasNotes = true;
+    if (n.type === "incidencia" || n.type === "negativa") m.hasIncident = true;
+  }
+  for (const a of assessments) {
+    if (a.date) get(a.date).hasAssessment = true;
+  }
+  return marks;
+}
