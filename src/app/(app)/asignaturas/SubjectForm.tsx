@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { SUBJECT_COLORS } from "@/lib/colors";
 import { createSubjectAction } from "./actions";
 
@@ -40,7 +40,7 @@ export function NewSubjectButton() {
       )}
     >
       {(close) => (
-        <form action={createSubjectAction} className="space-y-4">
+        <ModalForm action={createSubjectAction} close={close} className="space-y-4">
           <div>
             <label className="label" htmlFor="subject-name">
               Nombre
@@ -59,11 +59,9 @@ export function NewSubjectButton() {
             <button type="button" className="btn-secondary" onClick={close}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" onClick={close}>
-              Crear asignatura
-            </button>
+            <ModalSubmit>Crear asignatura</ModalSubmit>
           </div>
-        </form>
+        </ModalForm>
       )}
     </Modal>
   );

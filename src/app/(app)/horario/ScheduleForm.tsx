@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { WEEKDAYS } from "@/lib/dates";
 import { createScheduleEntryAction } from "./actions";
 
@@ -17,7 +17,11 @@ export function NewScheduleButton({ classes }: { classes: ClassOption[] }) {
       )}
     >
       {(close) => (
-        <form action={createScheduleEntryAction} className="space-y-4">
+        <ModalForm
+          action={createScheduleEntryAction}
+          close={close}
+          className="space-y-4"
+        >
           <div>
             <label className="label" htmlFor="classGroupId">
               Clase
@@ -79,11 +83,9 @@ export function NewScheduleButton({ classes }: { classes: ClassOption[] }) {
             <button type="button" className="btn-secondary" onClick={close}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" onClick={close}>
-              Añadir
-            </button>
+            <ModalSubmit>Añadir</ModalSubmit>
           </div>
-        </form>
+        </ModalForm>
       )}
     </Modal>
   );

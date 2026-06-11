@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -58,7 +58,11 @@ export function StudentNotesPanel({
           )}
         >
           {(close) => (
-            <form action={createStudentNoteAction} className="space-y-4">
+            <ModalForm
+              action={createStudentNoteAction}
+              close={close}
+              className="space-y-4"
+            >
               <input type="hidden" name="classGroupId" value={classGroupId} />
               <input type="hidden" name="date" value={date} />
               {sessionId && (
@@ -109,11 +113,9 @@ export function StudentNotesPanel({
                 <button type="button" className="btn-secondary" onClick={close}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn-primary" onClick={close}>
-                  Guardar
-                </button>
+                <ModalSubmit>Guardar</ModalSubmit>
               </div>
-            </form>
+            </ModalForm>
           )}
         </Modal>
       </div>

@@ -56,6 +56,9 @@ Variables de entorno (ya incluidas en `.env` para desarrollo):
     indicador individual/grupal. Calificación individual con nota y
     observación. Calificación grupal: nota base del grupo aplicada a todos los
     miembros con ajuste individual opcional.
+  - **Cuaderno del profesor**: rejilla con alumnos en filas y evaluables en
+    columnas; edición de todas las notas y guardado masivo, con media simple
+    normalizada por alumno y media por evaluable.
   - **Grupos**: grupos de trabajo con nombre, integrantes y anotaciones.
   - **Historial**: línea temporal de sesiones con contenidos y anotaciones.
   - **Mes**: calendario mensual con marcas en los días con sesiones,

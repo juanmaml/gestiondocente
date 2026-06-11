@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { createStudentAction } from "./actions";
 
 export function NewStudentButton() {
@@ -14,7 +14,7 @@ export function NewStudentButton() {
       )}
     >
       {(close) => (
-        <form action={createStudentAction} className="space-y-4">
+        <ModalForm action={createStudentAction} close={close} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="firstName">
@@ -45,11 +45,9 @@ export function NewStudentButton() {
             <button type="button" className="btn-secondary" onClick={close}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" onClick={close}>
-              Crear alumno
-            </button>
+            <ModalSubmit>Crear alumno</ModalSubmit>
           </div>
-        </form>
+        </ModalForm>
       )}
     </Modal>
   );

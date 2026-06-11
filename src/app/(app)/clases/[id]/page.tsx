@@ -18,6 +18,7 @@ import { GradesEditor } from "./GradesEditor";
 import { GroupGradesEditor } from "./GroupGradesEditor";
 import { NewGroupButton, GroupCard } from "./GroupsPanel";
 import { MonthCalendar, type DayMarks } from "./MonthCalendar";
+import { Gradebook } from "./Gradebook";
 import {
   deleteAssessmentAction,
   unenrollStudentAction,
@@ -27,6 +28,7 @@ const TABS = [
   { key: "sesion", label: "Sesión" },
   { key: "alumnos", label: "Alumnos" },
   { key: "evaluaciones", label: "Evaluaciones" },
+  { key: "cuaderno", label: "Cuaderno" },
   { key: "grupos", label: "Grupos" },
   { key: "historial", label: "Historial" },
   { key: "mes", label: "Mes" },
@@ -173,6 +175,47 @@ export default async function ClassPage({
 
   let history: Awaited<ReturnType<typeof loadHistory>> = [];
   if (tab === "historial") history = await loadHistory(cls.id);
+
+  let gradebook: {
+    columns: {
+      id: string;
+      title: string;
+      type: string;
+      maxScore: number;
+      isGroup: boolean;
+    }[];
+    rows: {
+      studentId: string;
+      name: string;
+      scores: Record<string, number | null>;
+    }[];
+  } | null = null;
+  if (tab === "cuaderno") {
+    const items = await prisma.assessmentItem.findMany({
+      where: { classGroupId: cls.id },
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+      include: { grades: true },
+    });
+    gradebook = {
+      columns: items.map((a) => ({
+        id: a.id,
+        title: a.title,
+        type: a.type,
+        maxScore: a.maxScore,
+        isGroup: a.isGroup,
+      })),
+      rows: students.map((s) => ({
+        studentId: s.id,
+        name: `${s.lastName}, ${s.firstName}`,
+        scores: Object.fromEntries(
+          items.map((a) => [
+            a.id,
+            a.grades.find((g) => g.studentId === s.id)?.score ?? null,
+          ])
+        ),
+      })),
+    };
+  }
 
   let monthData: {
     year: number;
@@ -418,6 +461,15 @@ export default async function ClassPage({
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Pestaña Cuaderno del profesor ── */}
+      {tab === "cuaderno" && gradebook && (
+        <Gradebook
+          classGroupId={cls.id}
+          columns={gradebook.columns}
+          rows={gradebook.rows}
+        />
       )}
 
       {/* ── Pestaña Grupos ── */}

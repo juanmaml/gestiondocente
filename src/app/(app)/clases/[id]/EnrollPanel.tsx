@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import {
   createAndEnrollStudentAction,
   enrollStudentAction,
@@ -30,7 +30,11 @@ export function EnrollButtons({
         )}
       >
         {(close) => (
-          <form action={enrollStudentAction} className="space-y-4">
+          <ModalForm
+            action={enrollStudentAction}
+            close={close}
+            className="space-y-4"
+          >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <div>
               <label className="label" htmlFor="enroll-student">
@@ -53,11 +57,9 @@ export function EnrollButtons({
               <button type="button" className="btn-secondary" onClick={close}>
                 Cancelar
               </button>
-              <button type="submit" className="btn-primary" onClick={close}>
-                Matricular
-              </button>
+              <ModalSubmit>Matricular</ModalSubmit>
             </div>
-          </form>
+          </ModalForm>
         )}
       </Modal>
 
@@ -70,7 +72,11 @@ export function EnrollButtons({
         )}
       >
         {(close) => (
-          <form action={createAndEnrollStudentAction} className="space-y-4">
+          <ModalForm
+            action={createAndEnrollStudentAction}
+            close={close}
+            className="space-y-4"
+          >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -96,11 +102,9 @@ export function EnrollButtons({
               <button type="button" className="btn-secondary" onClick={close}>
                 Cancelar
               </button>
-              <button type="submit" className="btn-primary" onClick={close}>
-                Crear y matricular
-              </button>
+              <ModalSubmit>Crear y matricular</ModalSubmit>
             </div>
-          </form>
+          </ModalForm>
         )}
       </Modal>
     </div>

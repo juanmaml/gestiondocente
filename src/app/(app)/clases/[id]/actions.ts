@@ -195,6 +195,47 @@ export async function saveGradesAction(formData: FormData) {
   revalidatePath(`/clases/${classGroupId}`);
 }
 
+/**
+ * Cuaderno del profesor: guarda de golpe toda la rejilla de notas
+ * (alumnos × evaluables). Solo actualiza la puntuación; las observaciones se
+ * mantienen intactas.
+ */
+export async function saveGradebookAction(formData: FormData) {
+  const user = await requireUser();
+  const classGroupId = String(formData.get("classGroupId") ?? "");
+  if (!(await ownClass(user.id, classGroupId))) return;
+
+  // Solo evaluables y alumnos que pertenecen a esta clase.
+  const [assessments, enrollments] = await Promise.all([
+    prisma.assessmentItem.findMany({
+      where: { classGroupId },
+      select: { id: true },
+    }),
+    prisma.classEnrollment.findMany({
+      where: { classGroupId },
+      select: { studentId: true },
+    }),
+  ]);
+  const assessmentIds = new Set(assessments.map((a) => a.id));
+  const studentIds = new Set(enrollments.map((e) => e.studentId));
+
+  for (const assessmentItemId of assessmentIds) {
+    for (const studentId of studentIds) {
+      const raw = formData.get(`grade_${assessmentItemId}_${studentId}`);
+      if (raw == null) continue; // celda no presente en el formulario
+      const score = num(raw);
+      await prisma.grade.upsert({
+        where: {
+          assessmentItemId_studentId: { assessmentItemId, studentId },
+        },
+        update: { score },
+        create: { assessmentItemId, studentId, score },
+      });
+    }
+  }
+  revalidatePath(`/clases/${classGroupId}`);
+}
+
 // ── Grupos de trabajo ──────────────────────────────────────
 export async function createGroupAction(formData: FormData) {
   const user = await requireUser();
@@ -239,9 +280,51 @@ export async function setGroupMembersAction(formData: FormData) {
 }
 
 /**
- * Califica un trabajo grupal: aplica la nota del grupo a todos los miembros y
- * permite ajustes individuales. Para cada miembro se usa la nota individual si
- * se ha indicado; si no, la nota base del grupo.
+ * Aplica la nota del grupo a TODOS los miembros, sobreescribiendo cualquier
+ * nota individual previa. Es la acción «Aplicar a todo el grupo».
+ */
+export async function applyGroupGradeToAllAction(formData: FormData) {
+  const user = await requireUser();
+  const classGroupId = String(formData.get("classGroupId") ?? "");
+  const assessmentItemId = String(formData.get("assessmentItemId") ?? "");
+  const studentGroupId = String(formData.get("studentGroupId") ?? "");
+
+  const item = await prisma.assessmentItem.findFirst({
+    where: { id: assessmentItemId, classGroup: { subject: { userId: user.id } } },
+  });
+  const group = await prisma.studentGroup.findFirst({
+    where: { id: studentGroupId, classGroupId },
+    include: { memberships: true },
+  });
+  if (!item || !group) return;
+
+  const groupScore = num(formData.get("groupScore"));
+
+  await prisma.groupGrade.upsert({
+    where: {
+      assessmentItemId_studentGroupId: { assessmentItemId, studentGroupId },
+    },
+    update: { score: groupScore },
+    create: { assessmentItemId, studentGroupId, score: groupScore },
+  });
+
+  // Sobreescribe la nota de cada miembro con la del grupo.
+  for (const m of group.memberships) {
+    await prisma.grade.upsert({
+      where: {
+        assessmentItemId_studentId: { assessmentItemId, studentId: m.studentId },
+      },
+      update: { score: groupScore },
+      create: { assessmentItemId, studentId: m.studentId, score: groupScore },
+    });
+  }
+  revalidatePath(`/clases/${classGroupId}`);
+}
+
+/**
+ * Guarda los ajustes individuales de los miembros del grupo. Para cada miembro
+ * se usa la nota individual indicada; si se deja vacía, se aplica la nota base
+ * del grupo. Es la acción «Guardar ajustes individuales».
  */
 export async function saveGroupGradeAction(formData: FormData) {
   const user = await requireUser();

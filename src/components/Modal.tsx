@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 /**
  * Modal sencillo controlado por un botón disparador. El contenido se pasa como
@@ -56,5 +57,51 @@ export function Modal({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Formulario para usar dentro de un Modal. Ejecuta la Server Action y, solo si
+ * termina sin lanzar error, cierra el modal. Evita el error
+ * «Form submission canceled because the form is not connected» que provocaba
+ * cerrar el modal en el onClick del botón (desmontaba el form antes de enviar).
+ */
+export function ModalForm({
+  action,
+  close,
+  className,
+  children,
+}: {
+  action: (formData: FormData) => Promise<void> | void;
+  close: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <form
+      className={className}
+      action={async (formData) => {
+        await action(formData);
+        close();
+      }}
+    >
+      {children}
+    </form>
+  );
+}
+
+/** Botón de envío con estado de carga, para usar dentro de ModalForm. */
+export function ModalSubmit({
+  children = "Guardar",
+  pendingLabel = "Guardando…",
+}: {
+  children?: React.ReactNode;
+  pendingLabel?: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="btn-primary" disabled={pending}>
+      {pending ? pendingLabel : children}
+    </button>
   );
 }

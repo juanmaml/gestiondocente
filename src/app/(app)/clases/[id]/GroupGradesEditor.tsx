@@ -1,7 +1,10 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { saveGroupGradeAction } from "./actions";
+import {
+  applyGroupGradeToAllAction,
+  saveGroupGradeAction,
+} from "./actions";
 
 type Member = { studentId: string; name: string; score: number | null };
 type Group = {
@@ -11,11 +14,26 @@ type Group = {
   members: Member[];
 };
 
-function SaveButton() {
+function ActionButton({
+  formAction,
+  variant,
+  children,
+  pendingLabel,
+}: {
+  formAction: (formData: FormData) => void;
+  variant: "primary" | "secondary";
+  children: React.ReactNode;
+  pendingLabel: string;
+}) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn-primary px-3 py-1.5 text-sm" disabled={pending}>
-      {pending ? "Guardando…" : "Aplicar al grupo"}
+    <button
+      type="submit"
+      formAction={formAction}
+      disabled={pending}
+      className={`${variant === "primary" ? "btn-primary" : "btn-secondary"} px-3 py-1.5 text-sm`}
+    >
+      {pending ? pendingLabel : children}
     </button>
   );
 }
@@ -44,7 +62,9 @@ export function GroupGradesEditor({
     <div className="space-y-4">
       {groups.map((g) => (
         <form
-          key={g.id}
+          // La key incluye las notas actuales: tras sobreescribir, el form se
+          // vuelve a montar y los campos reflejan los nuevos valores.
+          key={`${g.id}:${g.groupScore}:${g.members.map((m) => m.score).join(",")}`}
           action={saveGroupGradeAction}
           className="rounded-lg border border-gray-200 p-3"
         >
@@ -78,8 +98,8 @@ export function GroupGradesEditor({
           ) : (
             <div className="space-y-1.5">
               <p className="text-xs text-gray-400">
-                Ajuste individual opcional (si se deja vacío se aplica la nota
-                del grupo):
+                Ajuste individual (si se deja vacío se aplica la nota del grupo
+                al guardar ajustes):
               </p>
               {g.members.map((m) => (
                 <div
@@ -102,8 +122,21 @@ export function GroupGradesEditor({
             </div>
           )}
 
-          <div className="mt-3 flex justify-end">
-            <SaveButton />
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <ActionButton
+              formAction={saveGroupGradeAction}
+              variant="secondary"
+              pendingLabel="Guardando…"
+            >
+              Guardar ajustes individuales
+            </ActionButton>
+            <ActionButton
+              formAction={applyGroupGradeToAllAction}
+              variant="primary"
+              pendingLabel="Aplicando…"
+            >
+              Aplicar a todo el grupo
+            </ActionButton>
           </div>
         </form>
       ))}

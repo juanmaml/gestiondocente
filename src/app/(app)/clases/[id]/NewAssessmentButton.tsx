@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { createAssessmentAction } from "./actions";
 
 const TYPES = ["tarea", "examen", "trabajo", "actividad", "otro"];
@@ -20,7 +20,11 @@ export function NewAssessmentButton({
       )}
     >
       {(close) => (
-        <form action={createAssessmentAction} className="space-y-4">
+        <ModalForm
+          action={createAssessmentAction}
+          close={close}
+          className="space-y-4"
+        >
           <input type="hidden" name="classGroupId" value={classGroupId} />
           <div>
             <label className="label" htmlFor="a-title">
@@ -113,11 +117,9 @@ export function NewAssessmentButton({
             <button type="button" className="btn-secondary" onClick={close}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" onClick={close}>
-              Crear
-            </button>
+            <ModalSubmit>Crear</ModalSubmit>
           </div>
-        </form>
+        </ModalForm>
       )}
     </Modal>
   );

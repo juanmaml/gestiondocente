@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/components/Modal";
+import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import {
   createGroupAction,
   deleteGroupAction,
@@ -27,7 +27,7 @@ export function NewGroupButton({ classGroupId }: { classGroupId: string }) {
       )}
     >
       {(close) => (
-        <form action={createGroupAction} className="space-y-4">
+        <ModalForm action={createGroupAction} close={close} className="space-y-4">
           <input type="hidden" name="classGroupId" value={classGroupId} />
           <div>
             <label className="label" htmlFor="g-name">
@@ -57,11 +57,9 @@ export function NewGroupButton({ classGroupId }: { classGroupId: string }) {
             <button type="button" className="btn-secondary" onClick={close}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" onClick={close}>
-              Crear grupo
-            </button>
+            <ModalSubmit>Crear grupo</ModalSubmit>
           </div>
-        </form>
+        </ModalForm>
       )}
     </Modal>
   );
@@ -117,7 +115,11 @@ export function GroupCard({
         )}
       >
         {(close) => (
-          <form action={setGroupMembersAction} className="space-y-3">
+          <ModalForm
+            action={setGroupMembersAction}
+            close={close}
+            className="space-y-3"
+          >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <input type="hidden" name="studentGroupId" value={group.id} />
             <div className="max-h-72 space-y-1 overflow-y-auto">
@@ -147,11 +149,9 @@ export function GroupCard({
               <button type="button" className="btn-secondary" onClick={close}>
                 Cancelar
               </button>
-              <button type="submit" className="btn-primary" onClick={close}>
-                Guardar
-              </button>
+              <ModalSubmit>Guardar</ModalSubmit>
             </div>
-          </form>
+          </ModalForm>
         )}
       </Modal>
     </div>
