@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useToast } from "@/components/Toaster";
 import {
   createYearAction,
   logoutAction,
@@ -30,6 +31,7 @@ export function Sidebar({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [addingYear, setAddingYear] = useState(false);
+  const toast = useToast();
 
   return (
     <>
@@ -59,7 +61,16 @@ export function Sidebar({
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-400">
               Curso académico
             </p>
-            <form action={setActiveYearAction}>
+            <form
+              action={async (formData) => {
+                try {
+                  await setActiveYearAction(formData);
+                  toast.success("Curso académico cambiado.");
+                } catch {
+                  toast.error("No se pudo cambiar de curso.");
+                }
+              }}
+            >
               <select
                 name="yearId"
                 defaultValue={activeYearId}
@@ -74,7 +85,18 @@ export function Sidebar({
               </select>
             </form>
             {addingYear ? (
-              <form action={createYearAction} className="mt-2 flex gap-1">
+              <form
+                action={async (formData) => {
+                  try {
+                    await createYearAction(formData);
+                    toast.success("Curso académico creado.");
+                    setAddingYear(false);
+                  } catch {
+                    toast.error("No se pudo crear el curso.");
+                  }
+                }}
+                className="mt-2 flex gap-1"
+              >
                 <input
                   name="name"
                   placeholder="2026-2027"

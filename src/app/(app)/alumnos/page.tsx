@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { NewStudentButton } from "./StudentForm";
 import { deleteStudentAction } from "./actions";
 
@@ -69,12 +70,13 @@ export default async function AlumnosPage() {
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <form action={deleteStudentAction}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <button className="text-xs text-red-500 hover:underline">
-                        Eliminar
-                      </button>
-                    </form>
+                    <ConfirmDeleteButton
+                      action={deleteStudentAction}
+                      fields={{ id: s.id }}
+                      title="Eliminar alumno"
+                      message={`Se eliminará a ${s.firstName} ${s.lastName} junto con sus matrículas, calificaciones y anotaciones. Esta acción no se puede deshacer.`}
+                      successMessage="Alumno eliminado."
+                    />
                   </td>
                 </tr>
               ))}

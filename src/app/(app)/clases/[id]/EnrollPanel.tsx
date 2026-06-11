@@ -34,6 +34,7 @@ export function EnrollButtons({
             action={enrollStudentAction}
             close={close}
             className="space-y-4"
+            successMessage="Alumno matriculado."
           >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <div>
@@ -76,6 +77,7 @@ export function EnrollButtons({
             action={createAndEnrollStudentAction}
             close={close}
             className="space-y-4"
+            successMessage="Alumno creado y matriculado."
           >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <div className="grid grid-cols-2 gap-3">

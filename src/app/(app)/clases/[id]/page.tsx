@@ -19,6 +19,7 @@ import { GroupGradesEditor } from "./GroupGradesEditor";
 import { NewGroupButton, GroupCard } from "./GroupsPanel";
 import { MonthCalendar, type DayMarks } from "./MonthCalendar";
 import { Gradebook } from "./Gradebook";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import {
   deleteAssessmentAction,
   unenrollStudentAction,
@@ -400,13 +401,13 @@ export default async function ClassPage({
                         >
                           {expanded ? "Cerrar" : "Calificar"}
                         </Link>
-                        <form action={deleteAssessmentAction}>
-                          <input type="hidden" name="id" value={a.id} />
-                          <input type="hidden" name="classGroupId" value={cls.id} />
-                          <button className="text-xs text-red-500 hover:underline">
-                            Eliminar
-                          </button>
-                        </form>
+                        <ConfirmDeleteButton
+                          action={deleteAssessmentAction}
+                          fields={{ id: a.id, classGroupId: cls.id }}
+                          title="Eliminar evaluable"
+                          message={`Se eliminará «${a.title}» y todas sus calificaciones. Esta acción no se puede deshacer.`}
+                          successMessage="Evaluable eliminado."
+                        />
                       </div>
                     </div>
 
@@ -630,13 +631,17 @@ async function AlumnosTab({
                     {noteCount.get(s.id) ?? 0}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <form action={unenrollStudentAction}>
-                      <input type="hidden" name="classGroupId" value={classGroupId} />
-                      <input type="hidden" name="studentId" value={s.id} />
-                      <button className="text-xs text-red-500 hover:underline">
-                        Quitar de la clase
-                      </button>
-                    </form>
+                    <ConfirmDeleteButton
+                      action={unenrollStudentAction}
+                      fields={{ classGroupId, studentId: s.id }}
+                      title="Quitar alumno de la clase"
+                      message={`Se quitará a ${s.firstName} ${s.lastName} de esta clase. El alumno y sus datos no se eliminan; podrás volver a matricularlo.`}
+                      confirmLabel="Quitar"
+                      pendingLabel="Quitando…"
+                      successMessage="Alumno quitado de la clase."
+                    >
+                      Quitar de la clase
+                    </ConfirmDeleteButton>
                   </td>
                 </tr>
               ))}

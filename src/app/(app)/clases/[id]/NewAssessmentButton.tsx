@@ -24,6 +24,7 @@ export function NewAssessmentButton({
           action={createAssessmentAction}
           close={close}
           className="space-y-4"
+          successMessage="Evaluable creado."
         >
           <input type="hidden" name="classGroupId" value={classGroupId} />
           <div>

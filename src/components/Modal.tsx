@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { Spinner } from "./Spinner";
+import { useToast } from "./Toaster";
 
 /**
  * Modal sencillo controlado por un botón disparador. El contenido se pasa como
@@ -71,17 +73,30 @@ export function ModalForm({
   close,
   className,
   children,
+  successMessage,
+  errorMessage = "No se pudo completar la acción. Inténtalo de nuevo.",
 }: {
   action: (formData: FormData) => Promise<void> | void;
   close: () => void;
   className?: string;
   children: React.ReactNode;
+  /** Toast de éxito tras guardar (si se omite, no se muestra). */
+  successMessage?: string;
+  /** Toast de error si la acción falla; el modal queda abierto. */
+  errorMessage?: string;
 }) {
+  const toast = useToast();
   return (
     <form
       className={className}
       action={async (formData) => {
-        await action(formData);
+        try {
+          await action(formData);
+        } catch {
+          toast.error(errorMessage);
+          return;
+        }
+        if (successMessage) toast.success(successMessage);
         close();
       }}
     >
@@ -101,6 +116,7 @@ export function ModalSubmit({
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn-primary" disabled={pending}>
+      {pending && <Spinner className="h-4 w-4" />}
       {pending ? pendingLabel : children}
     </button>
   );

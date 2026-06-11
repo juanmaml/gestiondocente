@@ -1,6 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/Spinner";
+import { useToast } from "@/components/Toaster";
 import { saveGradesAction } from "./actions";
 
 type Row = {
@@ -14,6 +16,7 @@ function SaveButton() {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn-primary" disabled={pending}>
+      {pending && <Spinner className="h-4 w-4" />}
       {pending ? "Guardando…" : "Guardar calificaciones"}
     </button>
   );
@@ -30,8 +33,19 @@ export function GradesEditor({
   maxScore: number;
   rows: Row[];
 }) {
+  const toast = useToast();
   return (
-    <form action={saveGradesAction} className="space-y-3">
+    <form
+      action={async (formData) => {
+        try {
+          await saveGradesAction(formData);
+          toast.success("Calificaciones guardadas.");
+        } catch {
+          toast.error("No se pudieron guardar las calificaciones.");
+        }
+      }}
+      className="space-y-3"
+    >
       <input type="hidden" name="classGroupId" value={classGroupId} />
       <input type="hidden" name="assessmentItemId" value={assessmentItemId} />
       <div className="overflow-x-auto rounded-lg border border-gray-200">

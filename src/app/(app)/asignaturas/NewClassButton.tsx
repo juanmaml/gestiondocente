@@ -17,7 +17,12 @@ export function NewClassButton({ subjectId }: { subjectId: string }) {
       )}
     >
       {(close) => (
-        <ModalForm action={createClassAction} close={close} className="space-y-4">
+        <ModalForm
+          action={createClassAction}
+          close={close}
+          className="space-y-4"
+          successMessage="Clase creada."
+        >
           <input type="hidden" name="subjectId" value={subjectId} />
           <div>
             <label className="label" htmlFor="class-name">

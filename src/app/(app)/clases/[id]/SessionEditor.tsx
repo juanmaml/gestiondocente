@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/Spinner";
+import { useToast } from "@/components/Toaster";
 import { saveSessionAction } from "./actions";
 
 type SessionData = {
@@ -20,6 +22,7 @@ function SaveBar() {
         Los cambios se guardan al pulsar.
       </span>
       <button type="submit" className="btn-primary" disabled={pending}>
+        {pending && <Spinner className="h-4 w-4" />}
         {pending ? "Guardando…" : "Guardar sesión"}
       </button>
     </div>
@@ -77,8 +80,19 @@ export function SessionEditor({
   session: SessionData;
 }) {
   const [showPrivate, setShowPrivate] = useState(false);
+  const toast = useToast();
   return (
-    <form action={saveSessionAction} className="space-y-4">
+    <form
+      action={async (formData) => {
+        try {
+          await saveSessionAction(formData);
+          toast.success("Sesión guardada.");
+        } catch {
+          toast.error("No se pudo guardar la sesión. Inténtalo de nuevo.");
+        }
+      }}
+      className="space-y-4"
+    >
       <input type="hidden" name="classGroupId" value={classGroupId} />
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="startTime" value={startTime} />

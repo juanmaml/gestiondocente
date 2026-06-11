@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -62,6 +63,7 @@ export function StudentNotesPanel({
               action={createStudentNoteAction}
               close={close}
               className="space-y-4"
+              successMessage="Anotación guardada."
             >
               <input type="hidden" name="classGroupId" value={classGroupId} />
               <input type="hidden" name="date" value={date} />
@@ -147,13 +149,16 @@ export function StudentNotesPanel({
                   </div>
                   <p className="mt-0.5 text-sm text-gray-600">{n.content}</p>
                 </div>
-                <form action={deleteStudentNoteAction}>
-                  <input type="hidden" name="id" value={n.id} />
-                  <input type="hidden" name="classGroupId" value={classGroupId} />
-                  <button className="text-xs text-gray-300 hover:text-red-500">
-                    ✕
-                  </button>
-                </form>
+                <ConfirmDeleteButton
+                  action={deleteStudentNoteAction}
+                  fields={{ id: n.id, classGroupId }}
+                  title="Eliminar anotación"
+                  message={`Se eliminará esta anotación sobre ${n.studentName}.`}
+                  successMessage="Anotación eliminada."
+                  className="text-xs text-gray-300 hover:text-red-500"
+                >
+                  ✕
+                </ConfirmDeleteButton>
               </li>
             );
           })}

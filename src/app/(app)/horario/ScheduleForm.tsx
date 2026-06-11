@@ -21,6 +21,7 @@ export function NewScheduleButton({ classes }: { classes: ClassOption[] }) {
           action={createScheduleEntryAction}
           close={close}
           className="space-y-4"
+          successMessage="Franja añadida al horario."
         >
           <div>
             <label className="label" htmlFor="classGroupId">

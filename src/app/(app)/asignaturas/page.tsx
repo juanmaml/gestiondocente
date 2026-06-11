@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/session";
 import { getActiveYear } from "@/lib/year";
 import { readableText } from "@/lib/colors";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { NewSubjectButton } from "./SubjectForm";
 import { NewClassButton } from "./NewClassButton";
 import { deleteSubjectAction } from "./actions";
@@ -49,15 +50,14 @@ export default async function AsignaturasPage() {
                 }}
               >
                 <h2 className="text-lg font-semibold">{subject.name}</h2>
-                <form action={deleteSubjectAction}>
-                  <input type="hidden" name="id" value={subject.id} />
-                  <button
-                    className="rounded px-2 py-0.5 text-sm opacity-80 hover:bg-black/10 hover:opacity-100"
-                    title="Eliminar asignatura"
-                  >
-                    Eliminar
-                  </button>
-                </form>
+                <ConfirmDeleteButton
+                  action={deleteSubjectAction}
+                  fields={{ id: subject.id }}
+                  title="Eliminar asignatura"
+                  message={`Se eliminará «${subject.name}» con todas sus clases, sesiones, evaluables y calificaciones. Esta acción no se puede deshacer.`}
+                  successMessage="Asignatura eliminada."
+                  className="rounded px-2 py-0.5 text-sm opacity-80 hover:bg-black/10 hover:opacity-100"
+                />
               </div>
               <div className="p-4">
                 {subject.classGroups.length === 0 ? (

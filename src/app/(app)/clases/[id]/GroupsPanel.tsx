@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import {
   createGroupAction,
   deleteGroupAction,
@@ -27,7 +28,12 @@ export function NewGroupButton({ classGroupId }: { classGroupId: string }) {
       )}
     >
       {(close) => (
-        <ModalForm action={createGroupAction} close={close} className="space-y-4">
+        <ModalForm
+          action={createGroupAction}
+          close={close}
+          className="space-y-4"
+          successMessage="Grupo creado."
+        >
           <input type="hidden" name="classGroupId" value={classGroupId} />
           <div>
             <label className="label" htmlFor="g-name">
@@ -78,13 +84,13 @@ export function GroupCard({
     <div className="card p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">{group.name}</h3>
-        <form action={deleteGroupAction}>
-          <input type="hidden" name="id" value={group.id} />
-          <input type="hidden" name="classGroupId" value={classGroupId} />
-          <button className="text-xs text-red-500 hover:underline">
-            Eliminar
-          </button>
-        </form>
+        <ConfirmDeleteButton
+          action={deleteGroupAction}
+          fields={{ id: group.id, classGroupId }}
+          title="Eliminar grupo"
+          message={`Se eliminará el grupo «${group.name}» y sus calificaciones grupales. Las notas individuales de los alumnos se conservan.`}
+          successMessage="Grupo eliminado."
+        />
       </div>
 
       {group.notes && (
@@ -119,6 +125,7 @@ export function GroupCard({
             action={setGroupMembersAction}
             close={close}
             className="space-y-3"
+            successMessage="Integrantes actualizados."
           >
             <input type="hidden" name="classGroupId" value={classGroupId} />
             <input type="hidden" name="studentGroupId" value={group.id} />

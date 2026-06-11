@@ -1,6 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/Spinner";
+import { useToast } from "@/components/Toaster";
 import { saveGradebookAction } from "./actions";
 
 type Column = {
@@ -28,6 +30,7 @@ function SaveButton() {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn-primary" disabled={pending}>
+      {pending && <Spinner className="h-4 w-4" />}
       {pending ? "Guardando…" : "Guardar cuaderno"}
     </button>
   );
@@ -65,6 +68,7 @@ export function Gradebook({
   columns: Column[];
   rows: Row[];
 }) {
+  const toast = useToast();
   if (columns.length === 0 || rows.length === 0) {
     return (
       <div className="card px-6 py-12 text-center text-gray-400">
@@ -81,7 +85,17 @@ export function Gradebook({
     .join("|");
 
   return (
-    <form key={dataKey} action={saveGradebookAction}>
+    <form
+      key={dataKey}
+      action={async (formData) => {
+        try {
+          await saveGradebookAction(formData);
+          toast.success("Cuaderno guardado.");
+        } catch {
+          toast.error("No se pudo guardar el cuaderno. Inténtalo de nuevo.");
+        }
+      }}
+    >
       <input type="hidden" name="classGroupId" value={classGroupId} />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

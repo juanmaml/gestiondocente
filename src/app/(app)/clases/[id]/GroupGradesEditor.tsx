@@ -1,6 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/Spinner";
+import { useToast } from "@/components/Toaster";
 import {
   applyGroupGradeToAllAction,
   saveGroupGradeAction,
@@ -33,6 +35,7 @@ function ActionButton({
       disabled={pending}
       className={`${variant === "primary" ? "btn-primary" : "btn-secondary"} px-3 py-1.5 text-sm`}
     >
+      {pending && <Spinner className="h-4 w-4" />}
       {pending ? pendingLabel : children}
     </button>
   );
@@ -49,6 +52,20 @@ export function GroupGradesEditor({
   maxScore: number;
   groups: Group[];
 }) {
+  const toast = useToast();
+
+  // Envuelve una acción de guardado con avisos de éxito/error.
+  const withToast =
+    (action: (formData: FormData) => Promise<void>, successMessage: string) =>
+    async (formData: FormData) => {
+      try {
+        await action(formData);
+        toast.success(successMessage);
+      } catch {
+        toast.error("No se pudieron guardar las notas. Inténtalo de nuevo.");
+      }
+    };
+
   if (groups.length === 0) {
     return (
       <p className="text-sm text-gray-400">
@@ -65,7 +82,7 @@ export function GroupGradesEditor({
           // La key incluye las notas actuales: tras sobreescribir, el form se
           // vuelve a montar y los campos reflejan los nuevos valores.
           key={`${g.id}:${g.groupScore}:${g.members.map((m) => m.score).join(",")}`}
-          action={saveGroupGradeAction}
+          action={withToast(saveGroupGradeAction, "Notas del grupo guardadas.")}
           className="rounded-lg border border-gray-200 p-3"
         >
           <input type="hidden" name="classGroupId" value={classGroupId} />
@@ -124,14 +141,20 @@ export function GroupGradesEditor({
 
           <div className="mt-3 flex flex-wrap justify-end gap-2">
             <ActionButton
-              formAction={saveGroupGradeAction}
+              formAction={withToast(
+                saveGroupGradeAction,
+                "Ajustes individuales guardados."
+              )}
               variant="secondary"
               pendingLabel="Guardando…"
             >
               Guardar ajustes individuales
             </ActionButton>
             <ActionButton
-              formAction={applyGroupGradeToAllAction}
+              formAction={withToast(
+                applyGroupGradeToAllAction,
+                "Nota aplicada a todo el grupo."
+              )}
               variant="primary"
               pendingLabel="Aplicando…"
             >

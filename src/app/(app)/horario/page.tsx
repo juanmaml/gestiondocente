@@ -4,6 +4,7 @@ import { getActiveYear } from "@/lib/year";
 import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { readableText } from "@/lib/colors";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { NewScheduleButton } from "./ScheduleForm";
 import { deleteScheduleEntryAction } from "./actions";
 
@@ -88,15 +89,16 @@ export default async function HorarioPage() {
                       >
                         <div className="flex items-start justify-between gap-1">
                           <span className="font-semibold">{e.subjectName}</span>
-                          <form action={deleteScheduleEntryAction}>
-                            <input type="hidden" name="id" value={e.id} />
-                            <button
-                              className="opacity-0 transition group-hover:opacity-80 hover:!opacity-100"
-                              title="Eliminar franja"
-                            >
-                              ✕
-                            </button>
-                          </form>
+                          <ConfirmDeleteButton
+                            action={deleteScheduleEntryAction}
+                            fields={{ id: e.id }}
+                            title="Eliminar franja"
+                            message={`Se eliminará la franja de ${e.subjectName} · ${e.className} (${e.startTime}–${e.endTime}) del horario y del calendario.`}
+                            successMessage="Franja eliminada."
+                            className="opacity-0 transition group-hover:opacity-80 hover:!opacity-100"
+                          >
+                            ✕
+                          </ConfirmDeleteButton>
                         </div>
                         <div>{e.className}</div>
                         <div className="opacity-80">

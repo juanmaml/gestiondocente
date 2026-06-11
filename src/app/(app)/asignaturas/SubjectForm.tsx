@@ -40,7 +40,12 @@ export function NewSubjectButton() {
       )}
     >
       {(close) => (
-        <ModalForm action={createSubjectAction} close={close} className="space-y-4">
+        <ModalForm
+          action={createSubjectAction}
+          close={close}
+          className="space-y-4"
+          successMessage="Asignatura creada."
+        >
           <div>
             <label className="label" htmlFor="subject-name">
               Nombre

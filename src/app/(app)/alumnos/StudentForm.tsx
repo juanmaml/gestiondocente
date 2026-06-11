@@ -14,7 +14,12 @@ export function NewStudentButton() {
       )}
     >
       {(close) => (
-        <ModalForm action={createStudentAction} close={close} className="space-y-4">
+        <ModalForm
+          action={createStudentAction}
+          close={close}
+          className="space-y-4"
+          successMessage="Alumno creado."
+        >
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="firstName">
