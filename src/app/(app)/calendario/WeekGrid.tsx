@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ModalForm, ModalSubmit } from "@/components/Modal";
+import { ControlledModal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { SunIcon } from "@/components/icons";
 import { readableText } from "@/lib/colors";
@@ -464,31 +464,16 @@ export function WeekGrid({
 
       {/* Modal de creación tras el arrastre */}
       {draft && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 pt-[12vh]"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setDraft(null);
-          }}
+        <ControlledModal
+          open
+          onClose={() => setDraft(null)}
+          title="Nueva franja"
+          maxWidthClass="max-w-md"
         >
-          <div
-            className="card w-full max-w-md p-6 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Nueva franja
-              </h2>
-              <button
-                className="btn-ghost px-2 py-1"
-                onClick={() => setDraft(null)}
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-            </div>
+          {(close) => (
             <ModalForm
               action={createScheduleEntryAction}
-              close={() => setDraft(null)}
+              close={close}
               className="space-y-4"
               successMessage="Franja añadida al horario."
               validate={validateTimeRange}
@@ -561,7 +546,7 @@ export function WeekGrid({
                 <button
                   type="button"
                   className="btn-secondary"
-                  onClick={() => setDraft(null)}
+                  onClick={close}
                 >
                   Cancelar
                 </button>
@@ -570,8 +555,8 @@ export function WeekGrid({
                 </ModalSubmit>
               </div>
             </ModalForm>
-          </div>
-        </div>
+          )}
+        </ControlledModal>
       )}
     </>
   );

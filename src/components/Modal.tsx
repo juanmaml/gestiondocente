@@ -30,6 +30,38 @@ export function Modal({
   children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  return (
+    <>
+      {trigger(() => setOpen(true))}
+      <ControlledModal open={open} onClose={() => setOpen(false)} title={title}>
+        {children}
+      </ControlledModal>
+    </>
+  );
+}
+
+/**
+ * Variante de apertura programática (sin disparador propio): el estado
+ * `open` vive en quien lo usa, p. ej. abrir tras un arrastre o tras un
+ * sorteo. Mismo <dialog> nativo que Modal.
+ */
+export function ControlledModal({
+  open,
+  onClose,
+  title,
+  children,
+  maxWidthClass = "max-w-lg",
+  headerless = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: (close: () => void) => React.ReactNode;
+  /** Ancho máximo de la caja (p. ej. "max-w-sm"). */
+  maxWidthClass?: string;
+  /** Sin barra de título: el contenido define su propia cabecera. */
+  headerless?: boolean;
+}) {
   const ref = useRef<HTMLDialogElement>(null);
 
   // showModal() solo puede llamarse con el elemento ya montado.
@@ -37,46 +69,44 @@ export function Modal({
     if (open && ref.current && !ref.current.open) ref.current.showModal();
   }, [open]);
 
+  if (!open) return null;
   return (
-    <>
-      {trigger(() => setOpen(true))}
-      {open && (
-        <dialog
-          ref={ref}
-          aria-label={title}
-          // El evento close cubre Esc y cualquier cierre nativo.
-          onClose={() => setOpen(false)}
-          onMouseDown={(e) => {
-            // Un clic sobre el ::backdrop llega con el propio dialog como
-            // target; si cae fuera de la caja, se cierra.
-            const r = ref.current?.getBoundingClientRect();
-            if (
-              e.target === ref.current &&
-              r &&
-              (e.clientX < r.left ||
-                e.clientX > r.right ||
-                e.clientY < r.top ||
-                e.clientY > r.bottom)
-            ) {
-              ref.current?.close();
-            }
-          }}
-          className="card mx-auto mt-[8vh] max-h-[84vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl backdrop:bg-black/30"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            <button
-              className="btn-ghost px-2 py-1"
-              onClick={() => ref.current?.close()}
-              aria-label="Cerrar"
-            >
-              <XIcon />
-            </button>
-          </div>
-          {children(() => ref.current?.close())}
-        </dialog>
+    <dialog
+      ref={ref}
+      aria-label={title}
+      // El evento close cubre Esc y cualquier cierre nativo.
+      onClose={onClose}
+      onMouseDown={(e) => {
+        // Un clic sobre el ::backdrop llega con el propio dialog como
+        // target; si cae fuera de la caja, se cierra.
+        const r = ref.current?.getBoundingClientRect();
+        if (
+          e.target === ref.current &&
+          r &&
+          (e.clientX < r.left ||
+            e.clientX > r.right ||
+            e.clientY < r.top ||
+            e.clientY > r.bottom)
+        ) {
+          ref.current?.close();
+        }
+      }}
+      className={`card mx-auto mt-[8vh] max-h-[84vh] w-full ${maxWidthClass} overflow-y-auto p-6 shadow-xl backdrop:bg-black/30`}
+    >
+      {!headerless && (
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <button
+            className="btn-ghost px-2 py-1"
+            onClick={() => ref.current?.close()}
+            aria-label="Cerrar"
+          >
+            <XIcon />
+          </button>
+        </div>
       )}
-    </>
+      {children(() => ref.current?.close())}
+    </dialog>
   );
 }
 

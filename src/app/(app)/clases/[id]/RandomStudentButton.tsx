@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { ControlledModal } from "@/components/Modal";
 import { DiceIcon } from "@/components/icons";
 
 type Student = { id: string; firstName: string; lastName: string };
@@ -21,14 +22,6 @@ export function RandomStudentButton({
   const [picked, setPicked] = useState<Student | null>(null);
   const [open, setOpen] = useState(false);
   const [roundRestarted, setRoundRestarted] = useState(false);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    if (open) document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
 
   function readUsed(): string[] {
     try {
@@ -79,50 +72,43 @@ export function RandomStudentButton({
         </span>
       </button>
 
-      {open && picked && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 pt-[16vh]"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
+      {picked && (
+        <ControlledModal
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Alumno elegido al azar"
+          maxWidthClass="max-w-sm"
+          headerless
         >
-          <div
-            className="card w-full max-w-sm p-6 text-center shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Alumno elegido al azar"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <Avatar
-                name={`${picked.firstName} ${picked.lastName}`}
-                className="h-16 w-16 text-xl"
-              />
-              <p className="text-xl font-bold text-gray-900">
-                {picked.firstName} {picked.lastName}
-              </p>
-              <p className="text-xs text-gray-400">
-                {roundRestarted
-                  ? "Ronda completada: vuelve a empezar."
-                  : Math.max(remaining, 0) === 1
-                    ? "Queda 1 alumno en esta ronda."
-                    : `Quedan ${Math.max(remaining, 0)} alumnos en esta ronda.`}
-              </p>
+          {(close) => (
+            <div className="text-center">
+              <div className="flex flex-col items-center gap-3">
+                <Avatar
+                  name={`${picked.firstName} ${picked.lastName}`}
+                  className="h-16 w-16 text-xl"
+                />
+                <p className="text-xl font-bold text-gray-900">
+                  {picked.firstName} {picked.lastName}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {roundRestarted
+                    ? "Ronda completada: vuelve a empezar."
+                    : Math.max(remaining, 0) === 1
+                      ? "Queda 1 alumno en esta ronda."
+                      : `Quedan ${Math.max(remaining, 0)} alumnos en esta ronda.`}
+                </p>
+              </div>
+              <div className="mt-5 flex justify-center gap-2">
+                <button type="button" className="btn-secondary" onClick={close}>
+                  Cerrar
+                </button>
+                <button type="button" className="btn-primary" onClick={pick}>
+                  <DiceIcon /> Otro
+                </button>
+              </div>
             </div>
-            <div className="mt-5 flex justify-center gap-2">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setOpen(false)}
-              >
-                Cerrar
-              </button>
-              <button type="button" className="btn-primary" onClick={pick}>
-                <DiceIcon /> Otro
-              </button>
-            </div>
-          </div>
-        </div>
+          )}
+        </ControlledModal>
       )}
     </>
   );
