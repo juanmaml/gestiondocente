@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
 import { useToast } from "@/components/Toaster";
 import { AutosaveIndicator, useAutosave } from "@/components/Autosave";
+import { ChevronRightIcon, LockIcon } from "@/components/icons";
 import {
   movePlannedToNextSessionAction,
   saveSessionAction,
@@ -132,10 +133,17 @@ export function SessionEditor({
               type="button"
               onClick={moveToNext}
               disabled={moving}
-              className="mt-1 text-xs font-medium text-indigo-600 hover:underline disabled:opacity-50"
+              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline disabled:opacity-50"
               title="¿No ha dado tiempo? Copia lo previsto al campo «previsto» de la próxima sesión"
             >
-              {moving ? "Copiando…" : "→ Pasar a la próxima sesión"}
+              {moving ? (
+                "Copiando…"
+              ) : (
+                <>
+                  <ChevronRightIcon className="h-3 w-3" /> Pasar a la próxima
+                  sesión
+                </>
+              )}
             </button>
           )}
         </div>
@@ -170,7 +178,10 @@ export function SessionEditor({
           onClick={() => setShowPrivate((v) => !v)}
           className="flex w-full items-center justify-between text-sm font-medium text-amber-800"
         >
-          <span>🔒 Anotaciones privadas del docente</span>
+          <span className="inline-flex items-center gap-1.5">
+            <LockIcon className="h-3.5 w-3.5" /> Anotaciones privadas del
+            docente
+          </span>
           <span>{showPrivate ? "Ocultar" : "Mostrar"}</span>
         </button>
         {showPrivate && (

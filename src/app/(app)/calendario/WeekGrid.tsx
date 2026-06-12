@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ControlledModal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
-import { SunIcon } from "@/components/icons";
+import { SunIcon, XIcon } from "@/components/icons";
 import { readableText } from "@/lib/colors";
 import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { createScheduleEntryAction } from "../horario/actions";
@@ -282,7 +282,7 @@ export function WeekGrid({
                           successMessage="Festivo eliminado."
                           className="opacity-50 transition hover:opacity-100"
                         >
-                          ✕
+                          <XIcon className="h-3 w-3" />
                         </ConfirmDeleteButton>
                       </span>
                     )}

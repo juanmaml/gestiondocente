@@ -25,12 +25,26 @@ export const SUBJECT_COLOR_NAMES: Record<string, string> = {
   "#475569": "gris pizarra",
 };
 
-/** Color de texto legible (negro/blanco) sobre un color de fondo hex. */
-export function readableText(hex: string): string {
+/** Luminancia relativa WCAG de un color hex. */
+function relativeLuminance(hex: string): number {
   const c = hex.replace("#", "");
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? "#111827" : "#ffffff";
+  const channel = (i: number) => {
+    const s = parseInt(c.substring(i, i + 2), 16) / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+}
+
+const INK_LUMINANCE = relativeLuminance("#111827");
+
+/**
+ * Color de texto legible (tinta/blanco) sobre un fondo hex: gana el que
+ * ofrezca más contraste WCAG real. Sobre tonos medios (ámbar, esmeralda,
+ * naranja…) el blanco ronda 3:1 y falla AA; la tinta oscura supera 4,5:1.
+ */
+export function readableText(hex: string): string {
+  const bg = relativeLuminance(hex);
+  const contrastInk = (bg + 0.05) / (INK_LUMINANCE + 0.05);
+  const contrastWhite = 1.05 / (bg + 0.05);
+  return contrastInk >= contrastWhite ? "#111827" : "#ffffff";
 }

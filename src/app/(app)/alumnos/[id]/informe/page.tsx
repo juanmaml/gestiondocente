@@ -10,16 +10,8 @@ import {
 } from "@/lib/convivencia";
 import { averageOfAverages, classAverage } from "@/lib/grades";
 import { PrintButton } from "@/components/PrintButton";
-import { WarningIcon } from "@/components/icons";
-
-const NOTE_LABELS: Record<string, string> = {
-  positiva: "Positiva",
-  negativa: "Negativa",
-  incidencia: "Incidencia",
-  convivencia: "Convivencia",
-  parte: "Parte",
-  general: "General",
-};
+import { ChevronLeftIcon, WarningIcon } from "@/components/icons";
+import { NOTE_LABELS } from "@/lib/noteTypes";
 
 /** Datos mínimos para la media: nota, máximo y peso del evaluable. */
 function forAverage(grades: { score: number | null; assessmentItem: { maxScore: number; weight: number | null } }[]) {
@@ -102,9 +94,9 @@ export default async function StudentReportPage({
       <div className="mb-5 flex items-center justify-between print:hidden">
         <Link
           href={`/alumnos/${student.id}`}
-          className="text-sm text-gray-400 hover:text-indigo-600"
+          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-indigo-600"
         >
-          ← Volver al perfil
+          <ChevronLeftIcon className="h-3.5 w-3.5" /> Volver al perfil
         </Link>
         <PrintButton />
       </div>
@@ -112,7 +104,7 @@ export default async function StudentReportPage({
       {/* Cabecera del informe */}
       <div className="mb-6 border-b-2 border-gray-900 pb-4">
         <h1 className="text-2xl font-bold text-gray-900">
-          Informe de seguimiento — {student.firstName} {student.lastName}
+          Informe de seguimiento · {student.firstName} {student.lastName}
         </h1>
         <p className="mt-1 text-sm text-gray-600">
           Curso {year.name}

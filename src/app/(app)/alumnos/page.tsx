@@ -13,7 +13,7 @@ import {
 } from "@/lib/grades";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
-import { WarningIcon } from "@/components/icons";
+import { ChevronDownIcon, WarningIcon } from "@/components/icons";
 import { plural } from "@/lib/plural";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { NewStudentButton } from "./StudentForm";
@@ -149,9 +149,9 @@ export default async function AlumnosPage() {
             </h2>
             <span
               aria-hidden="true"
-              className="text-xs text-amber-700 transition-transform group-open:rotate-180"
+              className="text-amber-700 transition-transform group-open:rotate-180"
             >
-              ▼
+              <ChevronDownIcon className="h-3.5 w-3.5" />
             </span>
           </summary>
           <ul className="max-h-80 divide-y divide-gray-100 overflow-y-auto border-t border-amber-200">

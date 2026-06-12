@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MoonIcon, SunIcon } from "./icons";
 
 /**
  * Conmutador claro/oscuro. El tema se aplica con la clase `dark` en <html>
@@ -32,7 +33,7 @@ export function ThemeToggle() {
       className="btn-ghost w-full justify-start px-2 text-sm text-gray-500"
       aria-label={dark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
     >
-      <span aria-hidden="true">{dark ? "☀️" : "🌙"}</span>
+      {dark ? <SunIcon /> : <MoonIcon />}
       {dark == null ? "Tema" : dark ? "Tema claro" : "Tema oscuro"}
     </button>
   );

@@ -11,26 +11,11 @@ import {
 } from "@/lib/convivencia";
 import { Avatar } from "@/components/Avatar";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
-import { PrinterIcon } from "@/components/icons";
+import { ChevronLeftIcon, PrinterIcon } from "@/components/icons";
+import { NOTE_TYPES, noteMeta } from "@/lib/noteTypes";
 import { plural } from "@/lib/plural";
 import { averageOfAverages, classAverage } from "@/lib/grades";
 import { EditStudentButton } from "./EditStudentButton";
-
-const NOTE_TYPES = [
-  { value: "positiva", label: "Positiva", color: "#059669" },
-  { value: "negativa", label: "Negativa", color: "#dc2626" },
-  { value: "incidencia", label: "Incidencia", color: "#ea580c" },
-  { value: "convivencia", label: "Convivencia", color: "#c026d3" },
-  { value: "parte", label: "Parte", color: "#0f766e" },
-  { value: "general", label: "General", color: "#6b7280" },
-];
-
-function noteMeta(type: string) {
-  return (
-    NOTE_TYPES.find((t) => t.value === type) ??
-    NOTE_TYPES[NOTE_TYPES.length - 1]
-  );
-}
 
 /** Color de la media: rojo <5, ámbar <7, verde a partir de 7. */
 function avgColor(avg: number | null): string {
@@ -156,9 +141,9 @@ export default async function StudentProfilePage({
       <div className="mb-5">
         <Link
           href="/alumnos"
-          className="text-sm text-gray-400 hover:text-indigo-600"
+          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-indigo-600"
         >
-          ← Volver a alumnos
+          <ChevronLeftIcon className="h-3.5 w-3.5" /> Volver a alumnos
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
@@ -242,53 +227,32 @@ export default async function StudentProfilePage({
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card p-4">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
-            Media global
-          </p>
-          <p
-            className="mt-1 text-2xl font-bold"
-            style={{ color: avgColor(globalAvg) }}
-          >
+      {/* Resumen del curso en una línea: la jerarquía es del nombre */}
+      <p className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
+        <span title="Media de sus clases del curso, normalizada sobre 10">
+          Media global:{" "}
+          <strong style={{ color: avgColor(globalAvg) }}>
             {globalAvg == null ? "—" : globalAvg.toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-400">media de sus clases, sobre 10</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
-            Calificaciones
-          </p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{gradedCount}</p>
-          <p className="text-xs text-gray-400">
-            {gradedCount === 1 ? "evaluable calificado" : "evaluables calificados"}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
-            Anotaciones positivas
-          </p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">
-            {noteCounts.positiva}
-          </p>
-          <p className="text-xs text-gray-400">
-            de {plural(notes.length, "anotación", "anotaciones")}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs uppercase tracking-wide text-gray-400">
-            Negativas e incidencias
-          </p>
-          <p className="mt-1 text-2xl font-bold text-red-600">
-            {noteCounts.negativa + noteCounts.incidencia}
-          </p>
-          <p className="text-xs text-gray-400">
-            {plural(noteCounts.negativa, "negativa")} ·{" "}
-            {plural(noteCounts.incidencia, "incidencia")}
-          </p>
-        </div>
-      </div>
+          </strong>
+        </span>
+        <span aria-hidden="true" className="text-gray-300">
+          ·
+        </span>
+        <span>
+          {plural(gradedCount, "evaluable calificado", "evaluables calificados")}
+        </span>
+        <span aria-hidden="true" className="text-gray-300">
+          ·
+        </span>
+        <span>
+          {plural(notes.length, "anotación", "anotaciones")}
+          {notes.length > 0 &&
+            ` (${plural(noteCounts.positiva, "positiva")} · ${plural(
+              noteCounts.negativa,
+              "negativa"
+            )} · ${plural(noteCounts.incidencia, "incidencia")})`}
+        </span>
+      </p>
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Calificaciones por clase */}

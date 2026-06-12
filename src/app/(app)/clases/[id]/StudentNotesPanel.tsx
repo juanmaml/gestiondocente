@@ -8,6 +8,8 @@ import { useToast } from "@/components/Toaster";
 import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
 import { readableText } from "@/lib/colors";
 import { plural } from "@/lib/plural";
+import { NOTE_TYPES, noteMeta } from "@/lib/noteTypes";
+import { XIcon } from "@/components/icons";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -21,19 +23,6 @@ type Note = {
   content: string;
   studentName: string;
 };
-
-const NOTE_TYPES = [
-  { value: "positiva", label: "Positiva", color: "#059669" },
-  { value: "negativa", label: "Negativa", color: "#dc2626" },
-  { value: "incidencia", label: "Incidencia", color: "#ea580c" },
-  { value: "convivencia", label: "Convivencia", color: "#c026d3" },
-  { value: "parte", label: "Parte", color: "#0f766e" },
-  { value: "general", label: "General", color: "#6b7280" },
-];
-
-function typeMeta(t: string) {
-  return NOTE_TYPES.find((n) => n.value === t) ?? NOTE_TYPES[3];
-}
 
 /** Minúsculas y sin tildes, para que «martinez» encuentre a «Martínez». */
 function normalize(s: string) {
@@ -274,7 +263,7 @@ export function StudentNotesPanel({
       ) : (
         <ul className="space-y-2">
           {notes.map((n) => {
-            const meta = typeMeta(n.type);
+            const meta = noteMeta(n.type);
             return (
               <li
                 key={n.id}
@@ -302,7 +291,7 @@ export function StudentNotesPanel({
                   successMessage="Anotación eliminada."
                   className="text-xs text-gray-300 hover:text-red-500"
                 >
-                  ✕
+                  <XIcon className="h-3 w-3" />
                 </ConfirmDeleteButton>
               </li>
             );

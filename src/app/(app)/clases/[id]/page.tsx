@@ -28,7 +28,12 @@ import { MonthCalendar, type DayMarks } from "./MonthCalendar";
 import { Gradebook } from "./Gradebook";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
-import { BanIcon, SunIcon } from "@/components/icons";
+import {
+  BanIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SunIcon,
+} from "@/components/icons";
 import {
   deleteAssessmentAction,
   unenrollStudentAction,
@@ -353,11 +358,11 @@ export default async function ClassPage({
                 <div className="flex flex-wrap items-center gap-2">
                   {prev ? (
                     <Link href={slotHref(prev)} className="btn-secondary">
-                      ← Sesión anterior
+                      <ChevronLeftIcon /> Sesión anterior
                     </Link>
                   ) : (
                     <span className="btn-secondary opacity-40" aria-disabled="true">
-                      ← Sesión anterior
+                      <ChevronLeftIcon /> Sesión anterior
                     </span>
                   )}
                   <Link href={`/clases/${cls.id}`} className="btn-secondary">
@@ -365,11 +370,11 @@ export default async function ClassPage({
                   </Link>
                   {next ? (
                     <Link href={slotHref(next)} className="btn-secondary">
-                      Próxima sesión →
+                      Próxima sesión <ChevronRightIcon />
                     </Link>
                   ) : (
                     <span className="btn-secondary opacity-40" aria-disabled="true">
-                      Próxima sesión →
+                      Próxima sesión <ChevronRightIcon />
                     </span>
                   )}
                   <CancelSessionButton

@@ -10,6 +10,7 @@ import {
   toDateKey,
   formatDateShort,
 } from "@/lib/dates";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { WeekGrid } from "./WeekGrid";
 import { HolidayButton } from "./HolidayButton";
 
@@ -105,7 +106,7 @@ export default async function CalendarioPage({
             className="btn-secondary"
             aria-label="Semana anterior"
           >
-            ←
+            <ChevronLeftIcon />
           </Link>
           <Link href="/calendario" className="btn-secondary">
             Hoy
@@ -115,7 +116,7 @@ export default async function CalendarioPage({
             className="btn-secondary"
             aria-label="Semana siguiente"
           >
-            →
+            <ChevronRightIcon />
           </Link>
         </div>
       </div>

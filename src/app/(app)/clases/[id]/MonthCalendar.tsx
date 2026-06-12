@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WEEKDAYS, isoDay, monthLabel, toDateKey } from "@/lib/dates";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 
 export type DayMarks = {
   hasSession?: boolean;
@@ -50,14 +51,14 @@ export function MonthCalendar({
             className="btn-ghost px-2 py-1"
             aria-label="Mes anterior"
           >
-            ←
+            <ChevronLeftIcon />
           </Link>
           <Link
             href={`/clases/${classGroupId}?tab=historial&vista=mes&month=${nextMonth}`}
             className="btn-ghost px-2 py-1"
             aria-label="Mes siguiente"
           >
-            →
+            <ChevronRightIcon />
           </Link>
         </div>
       </div>

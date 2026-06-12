@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "./Spinner";
+import { CheckIcon } from "./icons";
 
 export type AutosaveStatus =
   | "idle"
@@ -145,8 +146,9 @@ export function AutosaveIndicator({
     );
   }
   return (
-    <span className="text-xs text-emerald-700">
-      ✓ Guardado{savedAt ? ` a las ${TIME_FMT.format(savedAt)}` : ""}
+    <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+      <CheckIcon className="h-3 w-3" />
+      Guardado{savedAt ? ` a las ${TIME_FMT.format(savedAt)}` : ""}
     </span>
   );
 }

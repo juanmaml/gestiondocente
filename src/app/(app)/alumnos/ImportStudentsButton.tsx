@@ -42,11 +42,13 @@ export function ImportStudentsButton({
           action={async (formData) => {
             const result = await importStudentsAction(formData);
             toast.success(
-              result.created === 1
-                ? `1 alumno importado${result.enrolled ? " y matriculado en la clase" : ""}.`
-                : `${result.created} alumnos importados${
-                    result.enrolled ? " y matriculados en la clase" : ""
-                  }.`
+              `${plural(result.created, "alumno importado", "alumnos importados")}${
+                result.enrolled
+                  ? result.created === 1
+                    ? " y matriculado en la clase"
+                    : " y matriculados en la clase"
+                  : ""
+              }.`
             );
             setText("");
           }}
@@ -76,7 +78,7 @@ export function ImportStudentsButton({
             />
             <p className="mt-1 text-xs text-gray-400">
               Formato «Apellidos, Nombre» (recomendado) o «Nombre Apellidos».
-              Email opcional separado por tabulador o «;» — puedes pegar dos
+              Email opcional separado por tabulador o «;»: puedes pegar dos
               columnas directamente desde Excel.
             </p>
           </div>

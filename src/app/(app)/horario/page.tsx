@@ -5,6 +5,7 @@ import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { readableText } from "@/lib/colors";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { XIcon } from "@/components/icons";
 import { NewScheduleButton } from "./ScheduleForm";
 import { deleteScheduleEntryAction } from "./actions";
 
@@ -97,7 +98,7 @@ export default async function HorarioPage() {
                             successMessage="Franja eliminada."
                             className="rounded opacity-0 transition group-hover:opacity-80 hover:!opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
                           >
-                            ✕
+                            <XIcon className="h-3.5 w-3.5" />
                           </ConfirmDeleteButton>
                         </div>
                         <div>{e.className}</div>
