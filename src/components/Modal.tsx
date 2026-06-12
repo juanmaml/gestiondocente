@@ -75,6 +75,7 @@ export function ModalForm({
   children,
   successMessage,
   errorMessage = "No se pudo completar la acción. Inténtalo de nuevo.",
+  validate,
 }: {
   action: (formData: FormData) => Promise<void> | void;
   close: () => void;
@@ -84,12 +85,21 @@ export function ModalForm({
   successMessage?: string;
   /** Toast de error si la acción falla; el modal queda abierto. */
   errorMessage?: string;
+  /**
+   * Validación previa al envío: si devuelve un texto, se muestra como error
+   * dentro del formulario y la acción no se ejecuta.
+   */
+  validate?: (formData: FormData) => string | null;
 }) {
   const toast = useToast();
+  const [validationError, setValidationError] = useState<string | null>(null);
   return (
     <form
       className={className}
       action={async (formData) => {
+        const error = validate?.(formData) ?? null;
+        setValidationError(error);
+        if (error) return;
         try {
           await action(formData);
         } catch {
@@ -100,6 +110,14 @@ export function ModalForm({
         close();
       }}
     >
+      {validationError && (
+        <p
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+        >
+          {validationError}
+        </p>
+      )}
       {children}
     </form>
   );

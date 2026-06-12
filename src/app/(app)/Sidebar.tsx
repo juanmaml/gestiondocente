@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Spinner } from "@/components/Spinner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toaster";
 import {
   createYearAction,
@@ -29,16 +31,49 @@ export function Sidebar({
   activeYearId: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [addingYear, setAddingYear] = useState(false);
+  const [changingYear, startYearTransition] = useTransition();
   const toast = useToast();
+
+  const activeYearName =
+    years.find((y) => y.id === activeYearId)?.name ?? "";
+
+  // Tras cambiar o crear un curso se vuelve al calendario: evita quedarse
+  // mirando una clase o un alumno del curso anterior.
+  function changeYear(yearId: string) {
+    const name = years.find((y) => y.id === yearId)?.name ?? "";
+    const formData = new FormData();
+    formData.set("yearId", yearId);
+    startYearTransition(async () => {
+      try {
+        await setActiveYearAction(formData);
+        toast.success(`Ahora estás trabajando en el curso ${name}.`);
+        router.push("/calendario");
+      } catch {
+        toast.error("No se pudo cambiar de curso.");
+      }
+    });
+  }
 
   return (
     <>
       {/* Top bar móvil */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:hidden">
-        <span className="font-semibold">Gestión Docente</span>
-        <button className="btn-ghost" onClick={() => setOpen((v) => !v)}>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">Gestión Docente</span>
+          {activeYearName && (
+            <span className="chip bg-indigo-50 font-semibold text-indigo-700">
+              {activeYearName}
+            </span>
+          )}
+        </div>
+        <button
+          className="btn-ghost"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Abrir menú"
+        >
           ☰
         </button>
       </div>
@@ -56,41 +91,39 @@ export function Sidebar({
             <span className="font-semibold text-gray-900">Gestión Docente</span>
           </Link>
 
-          {/* Curso académico */}
-          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-400">
-              Curso académico
+          {/* Curso académico activo */}
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+            <p className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              <span>📅 Curso activo</span>
+              {changingYear && <Spinner className="h-3.5 w-3.5" />}
             </p>
-            <form
-              action={async (formData) => {
-                try {
-                  await setActiveYearAction(formData);
-                  toast.success("Curso académico cambiado.");
-                } catch {
-                  toast.error("No se pudo cambiar de curso.");
-                }
-              }}
+            {/* La key fuerza el remontado cuando el curso activo cambia en el
+                servidor (p. ej. al crear uno nuevo), para que el select no se
+                quede mostrando el curso anterior. */}
+            <select
+              key={activeYearId}
+              name="yearId"
+              defaultValue={activeYearId}
+              disabled={changingYear}
+              onChange={(e) => changeYear(e.currentTarget.value)}
+              className="input border-indigo-200 py-1.5 text-sm font-semibold"
+              aria-label="Curso académico activo"
             >
-              <select
-                name="yearId"
-                defaultValue={activeYearId}
-                onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                className="input py-1.5 text-sm"
-              >
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {y.name}
-                  </option>
-                ))}
-              </select>
-            </form>
+              {years.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}
+                </option>
+              ))}
+            </select>
             {addingYear ? (
               <form
                 action={async (formData) => {
+                  const name = String(formData.get("name") ?? "").trim();
                   try {
                     await createYearAction(formData);
-                    toast.success("Curso académico creado.");
+                    toast.success(`Curso ${name} creado y activado.`);
                     setAddingYear(false);
+                    router.push("/calendario");
                   } catch {
                     toast.error("No se pudo crear el curso.");
                   }
@@ -141,6 +174,7 @@ export function Sidebar({
 
           <div className="mt-auto border-t border-gray-200 pt-4">
             <p className="px-2 text-sm font-medium text-gray-700">{userName}</p>
+            <ThemeToggle />
             <form action={logoutAction}>
               <button className="btn-ghost mt-1 w-full justify-start px-2 text-sm text-gray-500">
                 Cerrar sesión

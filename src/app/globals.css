@@ -15,6 +15,65 @@
   color-scheme: light;
 }
 
+/*
+ * Modo oscuro: la clase .dark en <html> redefine las variables de color del
+ * tema; todas las utilidades (bg-white, text-gray-900, …) las leen, por lo
+ * que la interfaz completa cambia sin tocar los componentes.
+ */
+.dark {
+  color-scheme: dark;
+
+  --color-bg: #0b1120;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-ink: #f1f5f9;
+  --color-muted: #94a3b8;
+
+  --color-white: #1e293b;
+  --color-gray-50: #243044;
+  --color-gray-100: #2c3a52;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #a8b3c4;
+  --color-gray-600: #c2cbd9;
+  --color-gray-700: #d5dce6;
+  --color-gray-800: #e2e8f0;
+  --color-gray-900: #f1f5f9;
+
+  --color-indigo-50: #28284f;
+  --color-indigo-100: #3b3b8f;
+  --color-indigo-200: #4338ca;
+  --color-indigo-400: #818cf8;
+  --color-indigo-600: #6366f1;
+  --color-indigo-700: #a5b4fc;
+  --color-indigo-800: #c7d2fe;
+
+  --color-red-50: #3f1d1d;
+  --color-red-200: #7f1d1d;
+  --color-red-500: #f87171;
+  --color-red-600: #ef4444;
+  --color-red-700: #dc2626;
+  --color-red-800: #fecaca;
+
+  --color-emerald-50: #0c2f25;
+  --color-emerald-200: #065f46;
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+
+  --color-amber-50: #33230b;
+  --color-amber-200: #78350f;
+  --color-amber-700: #fbbf24;
+  --color-amber-800: #fcd34d;
+
+  --color-sky-50: #0c2d42;
+  --color-sky-700: #7dd3fc;
+
+  --color-violet-50: #2a1d52;
+  --color-violet-700: #c4b5fd;
+}
+
 html,
 body {
   height: 100%;
@@ -25,6 +84,7 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Componentes reutilizables (Tailwind v4: @apply solo con utilidades) */
@@ -48,7 +108,7 @@ body {
     @apply bg-red-600 text-white hover:bg-red-700;
   }
   .input {
-    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100;
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 out-of-range:border-red-400 out-of-range:bg-red-50 out-of-range:focus:ring-red-200;
   }
   .label {
     @apply mb-1 block text-sm font-medium text-gray-700;
@@ -58,6 +118,28 @@ body {
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* Entrada suave del contenido al cambiar de página */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-enter {
+  animation: page-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .toast-enter {
+    animation: none;
   }
 }
 
@@ -80,4 +162,7 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
+}
+.dark * {
+  scrollbar-color: #475569 transparent;
 }

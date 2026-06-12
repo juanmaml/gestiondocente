@@ -20,14 +20,14 @@ export async function createScheduleEntryAction(formData: FormData) {
     !TIME_RE.test(endTime) ||
     startTime >= endTime
   ) {
-    return;
+    throw new Error("Franja horaria no válida.");
   }
 
   // Verifica propiedad.
   const cls = await prisma.classGroup.findFirst({
     where: { id: classGroupId, subject: { userId: user.id } },
   });
-  if (!cls) return;
+  if (!cls) throw new Error("Clase no encontrada.");
 
   await prisma.scheduleEntry.create({
     data: { classGroupId, dayOfWeek, startTime, endTime },

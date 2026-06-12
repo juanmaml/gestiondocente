@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
 import { Spinner } from "@/components/Spinner";
-import { useToast } from "@/components/Toaster";
+import { AutosaveIndicator, useAutosave } from "@/components/Autosave";
 import { saveSessionAction } from "./actions";
 
 type SessionData = {
@@ -13,21 +12,6 @@ type SessionData = {
   generalNotes: string | null;
   privateNotes: string | null;
 } | null;
-
-function SaveBar() {
-  const { pending } = useFormStatus();
-  return (
-    <div className="sticky bottom-0 -mx-1 mt-4 flex items-center justify-end gap-2 border-t border-gray-100 bg-white/90 px-1 pt-3 backdrop-blur">
-      <span className="mr-auto text-xs text-gray-400">
-        Los cambios se guardan al pulsar.
-      </span>
-      <button type="submit" className="btn-primary" disabled={pending}>
-        {pending && <Spinner className="h-4 w-4" />}
-        {pending ? "Guardando…" : "Guardar sesión"}
-      </button>
-    </div>
-  );
-}
 
 function Field({
   label,
@@ -80,16 +64,16 @@ export function SessionEditor({
   session: SessionData;
 }) {
   const [showPrivate, setShowPrivate] = useState(false);
-  const toast = useToast();
+  const { formRef, status, savedAt, onInput, save } =
+    useAutosave(saveSessionAction);
+
   return (
     <form
-      action={async (formData) => {
-        try {
-          await saveSessionAction(formData);
-          toast.success("Sesión guardada.");
-        } catch {
-          toast.error("No se pudo guardar la sesión. Inténtalo de nuevo.");
-        }
+      ref={formRef}
+      onInput={onInput}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
       }}
       className="space-y-4"
     >
@@ -159,7 +143,19 @@ export function SessionEditor({
         )}
       </div>
 
-      <SaveBar />
+      <div className="sticky bottom-0 -mx-1 mt-4 flex items-center justify-end gap-2 border-t border-gray-100 bg-white/90 px-1 pt-3 backdrop-blur">
+        <span className="mr-auto">
+          <AutosaveIndicator status={status} savedAt={savedAt} />
+        </span>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={status === "saving"}
+        >
+          {status === "saving" && <Spinner className="h-4 w-4" />}
+          {status === "saving" ? "Guardando…" : "Guardar ahora"}
+        </button>
+      </div>
     </form>
   );
 }

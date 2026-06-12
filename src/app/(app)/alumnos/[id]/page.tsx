@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/session";
 import { getActiveYear } from "@/lib/year";
 import { readableText } from "@/lib/colors";
 import { formatDateShort } from "@/lib/dates";
+import { Avatar } from "@/components/Avatar";
 import { EditStudentButton } from "./EditStudentButton";
 
 const NOTE_TYPES = [
@@ -136,33 +137,39 @@ export default async function StudentProfilePage({
           ← Volver a alumnos
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {student.firstName} {student.lastName}
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              {student.email ?? "Sin email"} · Curso {year.name}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {enrollments.length === 0 ? (
-                <span className="text-sm text-gray-400">
-                  Sin clases este curso
-                </span>
-              ) : (
-                enrollments.map((e) => (
-                  <Link
-                    key={e.id}
-                    href={`/clases/${e.classGroup.id}`}
-                    className="chip transition hover:brightness-95"
-                    style={{
-                      background: e.classGroup.subject.color,
-                      color: readableText(e.classGroup.subject.color),
-                    }}
-                  >
-                    {e.classGroup.subject.name} · {e.classGroup.name}
-                  </Link>
-                ))
-              )}
+          <div className="flex items-start gap-3">
+            <Avatar
+              name={`${student.firstName} ${student.lastName}`}
+              className="mt-0.5 h-14 w-14 text-lg"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {student.firstName} {student.lastName}
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                {student.email ?? "Sin email"} · Curso {year.name}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {enrollments.length === 0 ? (
+                  <span className="text-sm text-gray-400">
+                    Sin clases este curso
+                  </span>
+                ) : (
+                  enrollments.map((e) => (
+                    <Link
+                      key={e.id}
+                      href={`/clases/${e.classGroup.id}`}
+                      className="chip transition hover:brightness-95"
+                      style={{
+                        background: e.classGroup.subject.color,
+                        color: readableText(e.classGroup.subject.color),
+                      }}
+                    >
+                      {e.classGroup.subject.name} · {e.classGroup.name}
+                    </Link>
+                  ))
+                )}
+              </div>
             </div>
           </div>
           <EditStudentButton

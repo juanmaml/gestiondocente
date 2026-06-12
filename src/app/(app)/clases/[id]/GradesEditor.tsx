@@ -1,8 +1,12 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
 import { Spinner } from "@/components/Spinner";
-import { useToast } from "@/components/Toaster";
+import { Avatar } from "@/components/Avatar";
+import {
+  AutosaveIndicator,
+  focusNextOnEnter,
+  useAutosave,
+} from "@/components/Autosave";
 import { saveGradesAction } from "./actions";
 
 type Row = {
@@ -11,16 +15,6 @@ type Row = {
   score: number | null;
   observation: string | null;
 };
-
-function SaveButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button type="submit" className="btn-primary" disabled={pending}>
-      {pending && <Spinner className="h-4 w-4" />}
-      {pending ? "Guardando…" : "Guardar calificaciones"}
-    </button>
-  );
-}
 
 export function GradesEditor({
   classGroupId,
@@ -33,21 +27,26 @@ export function GradesEditor({
   maxScore: number;
   rows: Row[];
 }) {
-  const toast = useToast();
+  const { formRef, status, savedAt, onInput, save } =
+    useAutosave(saveGradesAction);
+
   return (
     <form
-      action={async (formData) => {
-        try {
-          await saveGradesAction(formData);
-          toast.success("Calificaciones guardadas.");
-        } catch {
-          toast.error("No se pudieron guardar las calificaciones.");
-        }
+      ref={formRef}
+      onInput={onInput}
+      onKeyDown={focusNextOnEnter}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
       }}
       className="space-y-3"
     >
       <input type="hidden" name="classGroupId" value={classGroupId} />
       <input type="hidden" name="assessmentItemId" value={assessmentItemId} />
+      <p className="text-xs text-gray-400">
+        Las notas se guardan solas al dejar de escribir. Enter baja al
+        siguiente alumno.
+      </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -61,12 +60,16 @@ export function GradesEditor({
             {rows.map((r) => (
               <tr key={r.studentId}>
                 <td className="px-3 py-2 font-medium text-gray-900">
-                  {r.name}
+                  <span className="flex items-center gap-2">
+                    <Avatar name={r.name} className="h-7 w-7 text-[10px]" />
+                    {r.name}
+                  </span>
                   <input type="hidden" name="studentId" value={r.studentId} />
                 </td>
                 <td className="px-3 py-2">
                   <input
                     name={`score_${r.studentId}`}
+                    data-col="score"
                     type="number"
                     step="0.01"
                     min={0}
@@ -78,6 +81,7 @@ export function GradesEditor({
                 <td className="px-3 py-2">
                   <input
                     name={`obs_${r.studentId}`}
+                    data-col="obs"
                     defaultValue={r.observation ?? ""}
                     placeholder="opcional"
                     className="input py-1"
@@ -88,8 +92,16 @@ export function GradesEditor({
           </tbody>
         </table>
       </div>
-      <div className="flex justify-end">
-        <SaveButton />
+      <div className="flex items-center justify-end gap-3">
+        <AutosaveIndicator status={status} savedAt={savedAt} />
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={status === "saving"}
+        >
+          {status === "saving" && <Spinner className="h-4 w-4" />}
+          {status === "saving" ? "Guardando…" : "Guardar ahora"}
+        </button>
       </div>
     </form>
   );

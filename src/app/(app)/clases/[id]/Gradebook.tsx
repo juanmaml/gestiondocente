@@ -1,8 +1,11 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
 import { Spinner } from "@/components/Spinner";
-import { useToast } from "@/components/Toaster";
+import {
+  AutosaveIndicator,
+  focusNextOnEnter,
+  useAutosave,
+} from "@/components/Autosave";
 import { saveGradebookAction } from "./actions";
 
 type Column = {
@@ -25,16 +28,6 @@ const TYPE_COLOR: Record<string, string> = {
   actividad: "#059669",
   otro: "#6b7280",
 };
-
-function SaveButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button type="submit" className="btn-primary" disabled={pending}>
-      {pending && <Spinner className="h-4 w-4" />}
-      {pending ? "Guardando…" : "Guardar cuaderno"}
-    </button>
-  );
-}
 
 /** Nota normalizada a base 10 según la puntuación máxima del evaluable. */
 function normalized(score: number | null, maxScore: number): number | null {
@@ -68,7 +61,9 @@ export function Gradebook({
   columns: Column[];
   rows: Row[];
 }) {
-  const toast = useToast();
+  const { formRef, status, savedAt, onInput, save } =
+    useAutosave(saveGradebookAction);
+
   if (columns.length === 0 || rows.length === 0) {
     return (
       <div className="card px-6 py-12 text-center text-gray-400">
@@ -79,31 +74,35 @@ export function Gradebook({
     );
   }
 
-  // La key fuerza el remontado tras guardar para reflejar los valores nuevos.
-  const dataKey = rows
-    .map((r) => columns.map((c) => r.scores[c.id] ?? "").join(","))
-    .join("|");
-
   return (
     <form
-      key={dataKey}
-      action={async (formData) => {
-        try {
-          await saveGradebookAction(formData);
-          toast.success("Cuaderno guardado.");
-        } catch {
-          toast.error("No se pudo guardar el cuaderno. Inténtalo de nuevo.");
-        }
+      ref={formRef}
+      onInput={onInput}
+      onKeyDown={focusNextOnEnter}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
       }}
     >
       <input type="hidden" name="classGroupId" value={classGroupId} />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">
-          Alumnos en filas, evaluables en columnas. Edita las notas y guarda.
-          La media es una media simple normalizada sobre 10.
+          Alumnos en filas, evaluables en columnas. Las notas se guardan solas
+          al dejar de escribir; Enter baja al siguiente alumno. La media es una
+          media simple normalizada sobre 10.
         </p>
-        <SaveButton />
+        <div className="flex items-center gap-3">
+          <AutosaveIndicator status={status} savedAt={savedAt} />
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={status === "saving"}
+          >
+            {status === "saving" && <Spinner className="h-4 w-4" />}
+            {status === "saving" ? "Guardando…" : "Guardar ahora"}
+          </button>
+        </div>
       </div>
 
       <div className="card overflow-x-auto">
@@ -154,6 +153,7 @@ export function Gradebook({
                     <td key={c.id} className="px-2 py-1.5 text-center">
                       <input
                         name={`grade_${c.id}_${r.studentId}`}
+                        data-col={c.id}
                         type="number"
                         step="0.01"
                         min={0}
@@ -199,8 +199,16 @@ export function Gradebook({
         </table>
       </div>
 
-      <div className="mt-3 flex justify-end">
-        <SaveButton />
+      <div className="mt-3 flex items-center justify-end gap-3">
+        <AutosaveIndicator status={status} savedAt={savedAt} />
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={status === "saving"}
+        >
+          {status === "saving" && <Spinner className="h-4 w-4" />}
+          {status === "saving" ? "Guardando…" : "Guardar ahora"}
+        </button>
       </div>
     </form>
   );

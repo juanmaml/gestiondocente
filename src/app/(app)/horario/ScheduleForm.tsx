@@ -6,6 +6,16 @@ import { createScheduleEntryAction } from "./actions";
 
 type ClassOption = { id: string; label: string };
 
+/** Las horas "HH:MM" se comparan bien como texto. */
+export function validateTimeRange(formData: FormData): string | null {
+  const start = String(formData.get("startTime") ?? "");
+  const end = String(formData.get("endTime") ?? "");
+  if (start && end && end <= start) {
+    return "La hora de fin debe ser posterior a la de inicio.";
+  }
+  return null;
+}
+
 export function NewScheduleButton({ classes }: { classes: ClassOption[] }) {
   return (
     <Modal
@@ -22,6 +32,7 @@ export function NewScheduleButton({ classes }: { classes: ClassOption[] }) {
           close={close}
           className="space-y-4"
           successMessage="Franja añadida al horario."
+          validate={validateTimeRange}
         >
           <div>
             <label className="label" htmlFor="classGroupId">

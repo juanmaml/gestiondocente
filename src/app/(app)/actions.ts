@@ -12,7 +12,7 @@ export async function logoutAction() {
 export async function createYearAction(formData: FormData) {
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
+  if (!name) throw new Error("Falta el nombre del curso.");
 
   await prisma.academicYear.updateMany({
     where: { userId: user.id },
@@ -30,7 +30,7 @@ export async function setActiveYearAction(formData: FormData) {
   const year = await prisma.academicYear.findFirst({
     where: { id, userId: user.id },
   });
-  if (!year) return;
+  if (!year) throw new Error("Curso no encontrado.");
 
   await prisma.academicYear.updateMany({
     where: { userId: user.id },

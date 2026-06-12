@@ -30,7 +30,9 @@ export async function saveSessionAction(formData: FormData) {
   const dateKey = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
-  if (!(await ownClass(user.id, classGroupId)) || !dateKey || !startTime) return;
+  if (!(await ownClass(user.id, classGroupId)) || !dateKey || !startTime) {
+    throw new Error("Sesión no válida.");
+  }
 
   const date = fromDateKey(dateKey);
   const dayEnd = new Date(date);
@@ -63,11 +65,13 @@ export async function enrollStudentAction(formData: FormData) {
   const user = await requireUser();
   const classGroupId = String(formData.get("classGroupId") ?? "");
   const studentId = String(formData.get("studentId") ?? "");
-  if (!(await ownClass(user.id, classGroupId)) || !studentId) return;
+  if (!(await ownClass(user.id, classGroupId)) || !studentId) {
+    throw new Error("Clase o alumno no válidos.");
+  }
   const student = await prisma.student.findFirst({
     where: { id: studentId, userId: user.id },
   });
-  if (!student) return;
+  if (!student) throw new Error("Alumno no encontrado.");
   await prisma.classEnrollment.upsert({
     where: { classGroupId_studentId: { classGroupId, studentId } },
     update: {},
@@ -81,7 +85,9 @@ export async function createAndEnrollStudentAction(formData: FormData) {
   const classGroupId = String(formData.get("classGroupId") ?? "");
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
-  if (!(await ownClass(user.id, classGroupId)) || !firstName || !lastName) return;
+  if (!(await ownClass(user.id, classGroupId)) || !firstName || !lastName) {
+    throw new Error("Faltan nombre o apellidos.");
+  }
   const student = await prisma.student.create({
     data: { userId: user.id, firstName, lastName },
   });
@@ -109,7 +115,9 @@ export async function createStudentNoteAction(formData: FormData) {
   const type = String(formData.get("type") ?? "general");
   const content = String(formData.get("content") ?? "").trim();
   const sessionId = str(formData.get("sessionId"));
-  if (!(await ownClass(user.id, classGroupId)) || !studentId || !content) return;
+  if (!(await ownClass(user.id, classGroupId)) || !studentId || !content) {
+    throw new Error("Anotación no válida.");
+  }
 
   await prisma.studentNote.create({
     data: {
@@ -141,7 +149,9 @@ export async function createAssessmentAction(formData: FormData) {
   const user = await requireUser();
   const classGroupId = String(formData.get("classGroupId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
-  if (!(await ownClass(user.id, classGroupId)) || !title) return;
+  if (!(await ownClass(user.id, classGroupId)) || !title) {
+    throw new Error("Faltan datos del evaluable.");
+  }
 
   const dateKey = str(formData.get("date"));
   await prisma.assessmentItem.create({
@@ -180,7 +190,7 @@ export async function saveGradesAction(formData: FormData) {
   const item = await prisma.assessmentItem.findFirst({
     where: { id: assessmentItemId, classGroup: { subject: { userId: user.id } } },
   });
-  if (!item) return;
+  if (!item) throw new Error("Evaluable no encontrado.");
 
   const studentIds = formData.getAll("studentId").map(String);
   for (const studentId of studentIds) {
@@ -203,7 +213,9 @@ export async function saveGradesAction(formData: FormData) {
 export async function saveGradebookAction(formData: FormData) {
   const user = await requireUser();
   const classGroupId = String(formData.get("classGroupId") ?? "");
-  if (!(await ownClass(user.id, classGroupId))) return;
+  if (!(await ownClass(user.id, classGroupId))) {
+    throw new Error("Clase no encontrada.");
+  }
 
   // Solo evaluables y alumnos que pertenecen a esta clase.
   const [assessments, enrollments] = await Promise.all([
@@ -241,7 +253,9 @@ export async function createGroupAction(formData: FormData) {
   const user = await requireUser();
   const classGroupId = String(formData.get("classGroupId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  if (!(await ownClass(user.id, classGroupId)) || !name) return;
+  if (!(await ownClass(user.id, classGroupId)) || !name) {
+    throw new Error("Falta el nombre del grupo.");
+  }
   await prisma.studentGroup.create({
     data: { classGroupId, name, notes: str(formData.get("notes")) },
   });
@@ -267,7 +281,7 @@ export async function setGroupMembersAction(formData: FormData) {
   const group = await prisma.studentGroup.findFirst({
     where: { id: studentGroupId, classGroup: { subject: { userId: user.id } } },
   });
-  if (!group) return;
+  if (!group) throw new Error("Grupo no encontrado.");
   const studentIds = formData.getAll("memberId").map(String);
 
   await prisma.groupMembership.deleteMany({ where: { studentGroupId } });
@@ -296,7 +310,7 @@ export async function applyGroupGradeToAllAction(formData: FormData) {
     where: { id: studentGroupId, classGroupId },
     include: { memberships: true },
   });
-  if (!item || !group) return;
+  if (!item || !group) throw new Error("Evaluable o grupo no encontrados.");
 
   const groupScore = num(formData.get("groupScore"));
 
@@ -339,7 +353,7 @@ export async function saveGroupGradeAction(formData: FormData) {
     where: { id: studentGroupId, classGroupId },
     include: { memberships: true },
   });
-  if (!item || !group) return;
+  if (!item || !group) throw new Error("Evaluable o grupo no encontrados.");
 
   const groupScore = num(formData.get("groupScore"));
 

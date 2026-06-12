@@ -6,6 +6,7 @@ import { ModalForm, ModalSubmit } from "@/components/Modal";
 import { readableText } from "@/lib/colors";
 import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { createScheduleEntryAction } from "../horario/actions";
+import { validateTimeRange } from "../horario/ScheduleForm";
 
 const PX_PER_MIN = 1.1;
 /** Redondeo del ratón a múltiplos de 5 minutos. */
@@ -376,6 +377,7 @@ export function WeekGrid({
               close={() => setDraft(null)}
               className="space-y-4"
               successMessage="Franja añadida al horario."
+              validate={validateTimeRange}
             >
               <div>
                 <label className="label" htmlFor="cal-class">

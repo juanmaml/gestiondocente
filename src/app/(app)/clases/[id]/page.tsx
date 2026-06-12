@@ -19,6 +19,7 @@ import { GroupGradesEditor } from "./GroupGradesEditor";
 import { NewGroupButton, GroupCard } from "./GroupsPanel";
 import { MonthCalendar, type DayMarks } from "./MonthCalendar";
 import { Gradebook } from "./Gradebook";
+import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import {
   deleteAssessmentAction,
@@ -237,6 +238,22 @@ export default async function ClassPage({
 
   return (
     <div className="p-6">
+      {/* Migas de pan: dónde estoy y cómo vuelvo */}
+      <nav
+        aria-label="Migas de pan"
+        className="mb-3 flex flex-wrap items-center gap-1.5 text-sm text-gray-400"
+      >
+        <Link href="/calendario" className="hover:text-indigo-600 hover:underline">
+          Calendario
+        </Link>
+        <span aria-hidden="true">›</span>
+        <Link href="/asignaturas" className="hover:text-indigo-600 hover:underline">
+          {cls.subject.name}
+        </Link>
+        <span aria-hidden="true">›</span>
+        <span className="font-medium text-gray-700">{cls.name}</span>
+      </nav>
+
       {/* Cabecera de la clase */}
       <div
         className="mb-5 rounded-xl p-5"
@@ -247,12 +264,9 @@ export default async function ClassPage({
             <p className="text-sm opacity-80">{cls.subject.name}</p>
             <h1 className="text-2xl font-bold">{cls.name}</h1>
           </div>
-          <div className="text-right text-sm opacity-90">
-            <p>{students.length} alumno(s)</p>
-            <Link href="/calendario" className="underline opacity-80 hover:opacity-100">
-              ← Volver al calendario
-            </Link>
-          </div>
+          <p className="text-right text-sm opacity-90">
+            {students.length} alumno(s)
+          </p>
         </div>
       </div>
 
@@ -321,7 +335,11 @@ export default async function ClassPage({
 
               <div className="grid gap-5 lg:grid-cols-3">
                 <div className="card p-4 lg:col-span-2">
+                  {/* La key remonta el editor al cambiar de sesión: sin ella,
+                      los textareas no controlados conservarían el texto de la
+                      sesión anterior. */}
                   <SessionEditor
+                    key={`${slot.dateKey}-${slot.startTime}`}
                     classGroupId={cls.id}
                     date={slot.dateKey}
                     startTime={slot.startTime}
@@ -626,9 +644,12 @@ async function AlumnosTab({
                   <td className="px-4 py-2.5">
                     <Link
                       href={`/alumnos/${s.id}`}
-                      className="font-medium text-gray-900 hover:text-indigo-600 hover:underline"
+                      className="flex items-center gap-2.5 font-medium text-gray-900 hover:text-indigo-600"
                     >
-                      {s.lastName}, {s.firstName}
+                      <Avatar name={`${s.firstName} ${s.lastName}`} />
+                      <span className="hover:underline">
+                        {s.lastName}, {s.firstName}
+                      </span>
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 text-gray-500">{s.email ?? "—"}</td>

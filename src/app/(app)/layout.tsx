@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/session";
 import { getActiveYear, listYears } from "@/lib/year";
+import { PageTransition } from "@/components/PageTransition";
 import { Sidebar } from "./Sidebar";
 
 export default async function AppLayout({
@@ -24,7 +25,9 @@ export default async function AppLayout({
         }))}
         activeYearId={activeYear.id}
       />
-      <main className="flex-1 overflow-x-hidden">{children}</main>
+      <main className="flex-1 overflow-x-hidden">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </div>
   );
 }

@@ -9,7 +9,7 @@ export async function createStudentAction(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim() || null;
-  if (!firstName || !lastName) return;
+  if (!firstName || !lastName) throw new Error("Faltan nombre o apellidos.");
 
   await prisma.student.create({
     data: { userId: user.id, firstName, lastName, email },
@@ -23,7 +23,7 @@ export async function updateStudentAction(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim() || null;
-  if (!id || !firstName || !lastName) return;
+  if (!id || !firstName || !lastName) throw new Error("Faltan nombre o apellidos.");
 
   await prisma.student.updateMany({
     where: { id, userId: user.id },

@@ -9,7 +9,7 @@ export async function createSubjectAction(formData: FormData) {
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const color = String(formData.get("color") ?? "#3b82f6");
-  if (!name) return;
+  if (!name) throw new Error("Falta el nombre de la asignatura.");
 
   const year = await getActiveYear(user.id);
   await prisma.subject.create({
@@ -23,7 +23,7 @@ export async function updateSubjectAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const color = String(formData.get("color") ?? "#3b82f6");
-  if (!id || !name) return;
+  if (!id || !name) throw new Error("Falta el nombre de la asignatura.");
 
   await prisma.subject.updateMany({
     where: { id, userId: user.id },
@@ -43,13 +43,13 @@ export async function createClassAction(formData: FormData) {
   const user = await requireUser();
   const subjectId = String(formData.get("subjectId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  if (!subjectId || !name) return;
+  if (!subjectId || !name) throw new Error("Falta el nombre de la clase.");
 
   // Verifica propiedad de la asignatura.
   const subject = await prisma.subject.findFirst({
     where: { id: subjectId, userId: user.id },
   });
-  if (!subject) return;
+  if (!subject) throw new Error("Asignatura no encontrada.");
 
   await prisma.classGroup.create({ data: { subjectId, name } });
   revalidatePath("/asignaturas");

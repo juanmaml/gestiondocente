@@ -5,6 +5,21 @@ import { createAssessmentAction } from "./actions";
 
 const TYPES = ["tarea", "examen", "trabajo", "actividad", "otro"];
 
+function validateAssessment(formData: FormData): string | null {
+  const maxScore = Number(formData.get("maxScore"));
+  if (!Number.isFinite(maxScore) || maxScore <= 0) {
+    return "La puntuación máxima debe ser un número mayor que 0.";
+  }
+  const weightRaw = String(formData.get("weight") ?? "").trim();
+  if (weightRaw !== "") {
+    const weight = Number(weightRaw);
+    if (!Number.isFinite(weight) || weight < 0 || weight > 100) {
+      return "El peso debe estar entre 0 y 100 (%).";
+    }
+  }
+  return null;
+}
+
 export function NewAssessmentButton({
   classGroupId,
 }: {
@@ -25,6 +40,7 @@ export function NewAssessmentButton({
           close={close}
           className="space-y-4"
           successMessage="Evaluable creado."
+          validate={validateAssessment}
         >
           <input type="hidden" name="classGroupId" value={classGroupId} />
           <div>
@@ -70,8 +86,10 @@ export function NewAssessmentButton({
                 name="maxScore"
                 type="number"
                 step="0.01"
+                min="0.01"
                 defaultValue={10}
                 className="input"
+                required
               />
             </div>
             <div>
@@ -83,6 +101,8 @@ export function NewAssessmentButton({
                 name="weight"
                 type="number"
                 step="0.01"
+                min="0"
+                max="100"
                 className="input"
                 placeholder="opc."
               />
