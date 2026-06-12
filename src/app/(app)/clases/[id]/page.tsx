@@ -27,6 +27,7 @@ import { MonthCalendar, type DayMarks } from "./MonthCalendar";
 import { Gradebook } from "./Gradebook";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { ScrollIntoView } from "@/components/ScrollIntoView";
 import {
   BanIcon,
   ChevronLeftIcon,
@@ -492,7 +493,9 @@ export default async function ClassPage({
 
           {/* Detalle del evaluable abierto desde la cabecera de columna */}
           {selectedAssessment && (
-            <div className="card mt-6 p-4">
+            <>
+              <ScrollIntoView watch={selectedAssessment.id} />
+              <div className="card mt-6 p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -541,6 +544,7 @@ export default async function ClassPage({
                   />
                   <Link
                     href={tabHref("calificaciones")}
+                    scroll={false}
                     className="btn-ghost px-2 py-1"
                     aria-label="Cerrar detalle del evaluable"
                   >
@@ -596,7 +600,8 @@ export default async function ClassPage({
                   />
                 )}
               </div>
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}

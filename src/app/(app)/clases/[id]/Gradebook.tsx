@@ -247,6 +247,10 @@ export function Gradebook({
                     <th key={c.id} className="px-2 py-2 text-center align-bottom">
                       <Link
                         href={detailHref(c.id)}
+                        // El desplazamiento hasta el detalle lo hace el propio
+                        // panel (ScrollIntoView); sin esto, Next subiría al
+                        // principio de la página en cada clic.
+                        scroll={false}
                         title={`${c.title} · ${c.type} · máx. ${c.maxScore}${
                           c.weight != null ? ` · peso ${c.weight}%` : ""
                         } · abrir detalle`}
