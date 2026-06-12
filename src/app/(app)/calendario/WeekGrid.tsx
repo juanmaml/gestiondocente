@@ -61,6 +61,47 @@ export function WeekGrid({
   const [prefStart, setPrefStart] = useState(8);
   const [prefEnd, setPrefEnd] = useState(15);
 
+  // Minuto actual, solo si la semana mostrada contiene hoy. Arranca en null
+  // (también en el servidor) y se fija tras montar para no desajustar la
+  // hidratación; se refresca cada minuto.
+  const hasToday = days.some((d) => d.isToday);
+  const [nowMin, setNowMin] = useState<number | null>(null);
+  useEffect(() => {
+    if (!hasToday) return;
+    function update() {
+      const n = new Date();
+      setNowMin(n.getHours() * 60 + n.getMinutes());
+    }
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, [hasToday]);
+
+  // Franja en curso ahora mismo y, si no hay, la siguiente de hoy. Responden
+  // a «¿qué tengo ahora?» sin que el docente escanee la rejilla.
+  const todayDay = days.find((d) => d.isToday);
+  const todayIsHoliday = todayDay
+    ? holidayByDate.has(todayDay.dateKey)
+    : false;
+  let currentEntryId: string | null = null;
+  let nextEntryId: string | null = null;
+  if (todayDay && !todayIsHoliday && nowMin != null) {
+    const todayEntries = entries
+      .filter((e) => e.dayOfWeek === todayDay.value)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+    currentEntryId =
+      todayEntries.find(
+        (e) =>
+          timeToMinutes(e.startTime) <= nowMin &&
+          nowMin < timeToMinutes(e.endTime)
+      )?.id ?? null;
+    if (!currentEntryId) {
+      nextEntryId =
+        todayEntries.find((e) => timeToMinutes(e.startTime) > nowMin)?.id ??
+        null;
+    }
+  }
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -320,12 +361,18 @@ export function WeekGrid({
                         (timeToMinutes(e.endTime) -
                           timeToMinutes(e.startTime)) *
                         PX_PER_MIN;
+                      const isCurrent = e.id === currentEntryId;
+                      const isNext = e.id === nextEntryId;
                       return (
                         <Link
                           key={e.id}
                           href={`/clases/${e.classGroupId}?date=${day.dateKey}&start=${e.startTime}&end=${e.endTime}`}
                           className={`absolute left-1 right-1 overflow-hidden rounded-md p-1.5 text-xs shadow-sm transition hover:brightness-95 ${
                             holiday ? "opacity-30 saturate-50" : ""
+                          } ${
+                            isCurrent
+                              ? "z-10 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-50"
+                              : ""
                           }`}
                           style={{
                             top,
@@ -334,6 +381,16 @@ export function WeekGrid({
                             color: readableText(e.color),
                           }}
                         >
+                          {isCurrent && (
+                            <span className="absolute right-1 top-1 rounded-full bg-white/95 px-1.5 py-px text-[10px] font-bold text-indigo-700">
+                              Ahora
+                            </span>
+                          )}
+                          {isNext && (
+                            <span className="absolute right-1 top-1 rounded-full bg-white/80 px-1.5 py-px text-[10px] font-medium text-gray-700">
+                              Próxima
+                            </span>
+                          )}
                           <div className="font-semibold leading-tight">
                             {e.subjectName}
                           </div>
@@ -346,6 +403,23 @@ export function WeekGrid({
                         </Link>
                       );
                     })}
+
+                    {/* Línea de la hora actual (solo hoy, dentro del rango;
+                        en festivo no se añade nada) */}
+                    {day.isToday &&
+                      !holiday &&
+                      nowMin != null &&
+                      nowMin >= startMin &&
+                      nowMin <= endMin && (
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-x-0 z-20"
+                          style={{ top: (nowMin - startMin) * PX_PER_MIN }}
+                        >
+                          <div className="border-t-2 border-indigo-600" />
+                          <span className="absolute -left-1 -top-[5px] h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                        </div>
+                      )}
 
                     {/* Selección en curso */}
                     {drag &&

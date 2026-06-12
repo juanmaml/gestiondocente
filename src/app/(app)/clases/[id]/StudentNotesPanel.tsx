@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { Avatar } from "@/components/Avatar";
 import { useToast } from "@/components/Toaster";
 import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
+import { readableText } from "@/lib/colors";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -29,6 +32,143 @@ const NOTE_TYPES = [
 
 function typeMeta(t: string) {
   return NOTE_TYPES.find((n) => n.value === t) ?? NOTE_TYPES[3];
+}
+
+/** Minúsculas y sin tildes, para que «martinez» encuentre a «Martínez». */
+function normalize(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+}
+
+/**
+ * Selector de alumno con búsqueda: input que filtra en vivo una lista de
+ * radios nativos (teclado y validación gratis). Con prisa, teclear tres
+ * letras gana siempre a recorrer un desplegable de 30 nombres.
+ */
+function StudentPicker({ students }: { students: Student[] }) {
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const q = normalize(query.trim());
+  const filtered = q
+    ? students.filter((s) =>
+        normalize(`${s.firstName} ${s.lastName}`).includes(q)
+      )
+    : students;
+
+  const selectedStudent = students.find((s) => s.id === selected);
+  const selectedVisible = filtered.some((s) => s.id === selected);
+
+  return (
+    <div>
+      <label className="label" htmlFor="note-student-search">
+        Alumno
+      </label>
+      <input
+        id="note-student-search"
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter no envía el formulario: selecciona el primer resultado
+          // (teclear tres letras + Enter y ya está elegido el alumno).
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length > 0) setSelected(filtered[0].id);
+          }
+        }}
+        placeholder="Buscar por nombre…"
+        className="input mb-2"
+        autoFocus
+      />
+      {/* Si el filtro oculta al alumno elegido, su valor sigue viajando. */}
+      {selected && !selectedVisible && (
+        <input type="hidden" name="studentId" value={selected} />
+      )}
+      {selectedStudent && !selectedVisible && (
+        <p className="mb-1.5 text-xs text-gray-500">
+          Seleccionado: {selectedStudent.lastName}, {selectedStudent.firstName}
+        </p>
+      )}
+      <div className="max-h-44 overflow-y-auto rounded-lg border border-gray-200">
+        {filtered.length === 0 ? (
+          <p className="px-3 py-4 text-center text-sm text-gray-400">
+            Ningún alumno coincide con «{query.trim()}».
+          </p>
+        ) : (
+          filtered.map((s) => (
+            <label
+              key={s.id}
+              className="flex cursor-pointer items-center gap-2.5 border-b border-gray-100 px-3 py-2 text-sm last:border-b-0 hover:bg-gray-50 has-[:checked]:bg-indigo-50"
+            >
+              <input
+                type="radio"
+                name="studentId"
+                value={s.id}
+                checked={selected === s.id}
+                onChange={() => setSelected(s.id)}
+                className="accent-indigo-600"
+              />
+              <Avatar
+                name={`${s.firstName} ${s.lastName}`}
+                className="h-6 w-6 text-[9px]"
+              />
+              <span className="text-gray-900">
+                {s.lastName}, {s.firstName}
+              </span>
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Tipo de anotación como chips de radio con el color de cada tipo. */
+function TypeChips() {
+  const [type, setType] = useState(NOTE_TYPES[0].value);
+  return (
+    <fieldset>
+      <legend className="label">Tipo</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {NOTE_TYPES.map((t) => {
+          const active = type === t.value;
+          return (
+            <label key={t.value} className="cursor-pointer">
+              <input
+                type="radio"
+                name="type"
+                value={t.value}
+                checked={active}
+                onChange={() => setType(t.value)}
+                className="peer sr-only"
+              />
+              <span
+                className="chip border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-1"
+                style={
+                  active
+                    ? {
+                        background: t.color,
+                        color: readableText(t.color),
+                        borderColor: t.color,
+                      }
+                    : {
+                        background: `${t.color}14`,
+                        color: t.color,
+                        borderColor: "transparent",
+                      }
+                }
+              >
+                {t.label}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
 }
 
 export function StudentNotesPanel({
@@ -92,41 +232,17 @@ export function StudentNotesPanel({
               close={close}
               className="space-y-4"
               successMessage="Anotación guardada."
+              validate={(formData) =>
+                formData.get("studentId") ? null : "Elige un alumno."
+              }
             >
               <input type="hidden" name="classGroupId" value={classGroupId} />
               <input type="hidden" name="date" value={date} />
               {sessionId && (
                 <input type="hidden" name="sessionId" value={sessionId} />
               )}
-              <div>
-                <label className="label" htmlFor="note-student">
-                  Alumno
-                </label>
-                <select
-                  id="note-student"
-                  name="studentId"
-                  className="input"
-                  required
-                >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.lastName}, {s.firstName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label" htmlFor="note-type">
-                  Tipo
-                </label>
-                <select id="note-type" name="type" className="input">
-                  {NOTE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <StudentPicker students={students} />
+              <TypeChips />
               <div>
                 <label className="label" htmlFor="note-content">
                   Anotación
