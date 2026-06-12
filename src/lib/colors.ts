@@ -38,13 +38,17 @@ function relativeLuminance(hex: string): number {
 const INK_LUMINANCE = relativeLuminance("#111827");
 
 /**
- * Color de texto legible (tinta/blanco) sobre un fondo hex: gana el que
- * ofrezca más contraste WCAG real. Sobre tonos medios (ámbar, esmeralda,
- * naranja…) el blanco ronda 3:1 y falla AA; la tinta oscura supera 4,5:1.
+ * Color de texto legible (tinta/blanco) sobre un fondo hex, con sesgo
+ * hacia el blanco: sobre colores saturados medios (esmeralda, naranja,
+ * cian) el blanco lee mejor y mantiene coherentes los bloques del
+ * calendario, así que se acepta mientras supere 3,5:1 (umbral de texto
+ * grande/componentes). Solo cuando el blanco cae por debajo (ámbar,
+ * ~2,9:1) y la tinta contrasta más, se cambia a tinta oscura.
  */
 export function readableText(hex: string): string {
   const bg = relativeLuminance(hex);
   const contrastInk = (bg + 0.05) / (INK_LUMINANCE + 0.05);
   const contrastWhite = 1.05 / (bg + 0.05);
-  return contrastInk >= contrastWhite ? "#111827" : "#ffffff";
+  if (contrastWhite >= 3.5 || contrastWhite >= contrastInk) return "#ffffff";
+  return "#111827";
 }
