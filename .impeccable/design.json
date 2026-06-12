@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-12T12:00:00+02:00",
+  "title": "Design System: Gestión Docente",
+  "extensions": {
+    "colorMeta": {
+      "indigo-tinta": {
+        "role": "primary",
+        "displayName": "Índigo tinta",
+        "canonical": "#4f46e5",
+        "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#818cf8", "#c7d2fe", "#eef2ff"]
+      },
+      "indigo-tinta-profundo": {
+        "role": "primary",
+        "displayName": "Índigo tinta profundo",
+        "canonical": "#4338ca",
+        "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#a5b4fc", "#e0e7ff"]
+      },
+      "papel": {
+        "role": "neutral",
+        "displayName": "Papel",
+        "canonical": "#f6f7f9",
+        "tonalRamp": ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f6f7f9", "#fcfcfd"]
+      },
+      "superficie": {
+        "role": "neutral",
+        "displayName": "Superficie",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#1e293b", "#475569", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc", "#ffffff"]
+      },
+      "borde": {
+        "role": "neutral",
+        "displayName": "Borde",
+        "canonical": "#e5e7eb",
+        "tonalRamp": ["#1f2937", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb"]
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#111827",
+        "tonalRamp": ["#030712", "#111827", "#1f2937", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"]
+      },
+      "gris-anotacion": {
+        "role": "neutral",
+        "displayName": "Gris anotación",
+        "canonical": "#6b7280",
+        "tonalRamp": ["#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"]
+      },
+      "papel-noche": {
+        "role": "neutral",
+        "displayName": "Papel noche",
+        "canonical": "#0b1120",
+        "tonalRamp": ["#0b1120", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#f1f5f9"]
+      },
+      "superficie-noche": {
+        "role": "neutral",
+        "displayName": "Superficie noche",
+        "canonical": "#1e293b",
+        "tonalRamp": ["#0b1120", "#1e293b", "#243044", "#2c3a52", "#334155", "#475569", "#94a3b8", "#e2e8f0"]
+      },
+      "borde-noche": {
+        "role": "neutral",
+        "displayName": "Borde noche",
+        "canonical": "#334155",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"]
+      },
+      "tinta-noche": {
+        "role": "neutral",
+        "displayName": "Tinta noche",
+        "canonical": "#f1f5f9",
+        "tonalRamp": ["#1e293b", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc"]
+      },
+      "rojo-incidencia": {
+        "role": "tertiary",
+        "displayName": "Rojo incidencia",
+        "canonical": "#dc2626",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fee2e2"]
+      },
+      "verde-positiva": {
+        "role": "tertiary",
+        "displayName": "Verde positiva",
+        "canonical": "#059669",
+        "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#34d399", "#a7f3d0", "#ecfdf5"]
+      },
+      "ambar-aviso": {
+        "role": "tertiary",
+        "displayName": "Ámbar aviso",
+        "canonical": "#ca8a04",
+        "tonalRamp": ["#422006", "#713f12", "#854d0e", "#a16207", "#ca8a04", "#eab308", "#fde047", "#fef9c3"]
+      }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Título de página en PageHeader; uno por pantalla." },
+      "title": { "displayName": "Title", "purpose": "Títulos de tarjeta, pestañas activas, encabezados de sección." },
+      "body": { "displayName": "Body", "purpose": "Tamaño de trabajo de toda la app: formularios, tablas, contenido." },
+      "label": { "displayName": "Label", "purpose": "Etiquetas de formulario y botones." },
+      "chip": { "displayName": "Chip", "purpose": "Chips, badges y metadatos del calendario." }
+    },
+    "shadows": [
+      { "name": "ambiental", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Tarjetas en reposo; única sombra de superficie del sistema." },
+      { "name": "flotante", "value": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)", "purpose": "Capas que flotan de verdad: modales y toasts." }
+    ],
+    "motion": [
+      { "name": "page-in", "value": "page-in 0.2s ease-out (opacity 0→1, translateY 4px→0)", "purpose": "Entrada suave del contenido al cambiar de página; se anula con prefers-reduced-motion." },
+      { "name": "toast-in", "value": "toast-in 0.18s ease-out (opacity 0→1, translateY 8px→0, scale 0.97→1)", "purpose": "Entrada de los toasts; se anula con prefers-reduced-motion." },
+      { "name": "transition-colors", "value": "color/background-color 0.15s-0.2s ease", "purpose": "Estados hover/focus de botones, navegación y cambio de tema claro/oscuro." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de la pantalla; índigo tinta, una por vista.",
+      "html": "<button class=\"ds-btn-primary\">Guardar sesión</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-brand, #4f46e5); color: #ffffff; padding: 8px 14px; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-primary:hover { background: var(--color-brand-600, #4338ca); } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acciones de apoyo; superficie con borde fino.",
+      "html": "<button class=\"ds-btn-secondary\">Cancelar</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #ffffff; color: #374151; padding: 8px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-secondary:hover { background: #f9fafb; } .ds-btn-secondary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón de peligro",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destrucción real, siempre tras confirmación.",
+      "html": "<button class=\"ds-btn-danger\">Eliminar clase</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #dc2626; color: #ffffff; padding: 8px 14px; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; font-family: ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-danger:hover { background: #b91c1c; } .ds-btn-danger:focus-visible { outline: 2px solid #dc2626; outline-offset: 2px; }"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo estándar con etiqueta encima y foco índigo con anillo suave.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-input-demo\">Contenido impartido</label><input id=\"ds-input-demo\" class=\"ds-input\" type=\"text\" placeholder=\"Qué se ha trabajado hoy…\" /></div>",
+      "css": ".ds-field { font-family: ui-sans-serif, system-ui, sans-serif; max-width: 320px; } .ds-label { display: block; margin-bottom: 4px; font-size: 0.875rem; font-weight: 500; color: #374151; } .ds-input { width: 100%; background: #ffffff; color: #111827; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 12px; font-size: 0.875rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; } .ds-input::placeholder { color: #9ca3af; } .ds-input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px #e0e7ff; }"
+    },
+    {
+      "name": "Chip de anotación",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Píldora tintada por tipo de anotación; el color siempre va con texto.",
+      "html": "<span class=\"ds-chip ds-chip-positiva\">Positiva</span> <span class=\"ds-chip ds-chip-incidencia\">Incidencia</span> <span class=\"ds-chip ds-chip-asignatura\">1º ESO A</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 500; font-family: ui-sans-serif, system-ui, sans-serif; } .ds-chip-positiva { background: #ecfdf5; color: #047857; } .ds-chip-incidencia { background: #fee2e2; color: #b91c1c; } .ds-chip-asignatura { background: #4f46e5; color: #ffffff; }"
+    },
+    {
+      "name": "Tarjeta",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Contenedor base: superficie blanca, borde fino, sombra ambiental.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Matemáticas · 1º ESO A</p><p class=\"ds-card-body\">Próxima sesión: jueves, 10:15. Pendiente corregir el examen del tema 7.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); font-family: ui-sans-serif, system-ui, sans-serif; max-width: 360px; } .ds-card-title { margin: 0 0 4px; font-size: 1rem; font-weight: 600; color: #111827; } .ds-card-body { margin: 0; font-size: 0.875rem; color: #6b7280; line-height: 1.5; }"
+    },
+    {
+      "name": "Bloque de calendario",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Componente firma: bloque del calendario semanal teñido con el color de la asignatura, texto legible automático.",
+      "html": "<div class=\"ds-cal-block\"><span class=\"ds-cal-subject\">Matemáticas</span><span class=\"ds-cal-meta\">1º ESO A · 10:15-11:10</span></div>",
+      "css": ".ds-cal-block { display: flex; flex-direction: column; gap: 2px; background: #0891b2; color: #ffffff; border-radius: 8px; padding: 8px 10px; font-family: ui-sans-serif, system-ui, sans-serif; max-width: 220px; cursor: pointer; transition: filter 0.15s ease; } .ds-cal-block:hover { filter: brightness(1.08); } .ds-cal-block:focus-visible { outline: 2px solid #111827; outline-offset: 2px; } .ds-cal-subject { font-size: 0.875rem; font-weight: 600; } .ds-cal-meta { font-size: 0.75rem; opacity: 0.9; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El cuaderno sereno",
+    "overview": "Gestión Docente es el cuaderno del profesor reimaginado: papel claro, tinta índigo, orden y calma. Cada pantalla existe para que registrar algo cueste menos que hacerlo en papel. La estética es serena y eficiente, con una calidez discreta que aportan los colores por asignatura y los nombres de los alumnos, nunca la decoración. El sistema piensa en tiempo (hoy, esta sesión, esta semana): el calendario semanal es el hogar. Rechaza las plataformas educativas corporativas (densas, grises, burocráticas) y la hoja de cálculo glorificada (todo tablas, sin jerarquía ni respiro).",
+    "keyCharacteristics": [
+      "Fondo papel con superficies blancas y bordes finos; profundidad mínima.",
+      "Índigo tinta como única voz de marca; el resto del color identifica asignaturas y tipos de anotación.",
+      "Tipografía de sistema, jerarquía por peso y tamaño, sin fuentes decorativas.",
+      "Movimiento contenido: entradas de 180-200ms con ease-out, respeto a prefers-reduced-motion.",
+      "Impresión limpia: fondo blanco y sin sombras."
+    ],
+    "rules": [
+      { "name": "La regla del color con significado", "body": "El color identifica (una asignatura, un tipo de anotación, un estado); nunca decora. Si un color no informa, sobra.", "section": "colors" },
+      { "name": "La regla de la tinta única", "body": "El índigo tinta es la única voz de marca y aparece en menos del 10% de cualquier pantalla. Los colores de asignatura no compiten con él.", "section": "colors" },
+      { "name": "La regla del único titular", "body": "Cada pantalla tiene exactamente un Headline; todo lo demás baja un escalón. Si dos textos compiten en tamaño, uno de los dos está mal.", "section": "typography" },
+      { "name": "La regla plano-por-defecto", "body": "Las superficies son planas en reposo. Si una sombra crece, es porque el elemento flota de verdad (modal, toast); el hover no eleva.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar el color de asignatura como identificador en calendario, chips y cabeceras de clase; resolver el texto sobre él con readableText().",
+      "Do mantener la acción principal de cada pantalla a un clic, con botón primario índigo único y visible.",
+      "Do acompañar siempre el color con texto o icono: el color nunca es el único canal.",
+      "Do respetar prefers-reduced-motion en toda animación nueva.",
+      "Do mostrar el estado de guardado (autoguardado, toasts): «nada se pierde» es una promesa visual."
+    ],
+    "donts": [
+      "Don't parecer una plataforma educativa corporativa (Moodle, Séneca/Aules, SM Educamos): nada de formularios interminables, grises burocráticos ni navegación laberíntica.",
+      "Don't caer en la hoja de cálculo glorificada: prohibido resolver densidad añadiendo bordes; la jerarquía sale de tipografía y espaciado.",
+      "Don't usar border-left o border-right de más de 1px como franja de color en tarjetas, listas o avisos.",
+      "Don't usar texto con degradado, glassmorphism decorativo ni la plantilla de métrica gigante con label pequeño.",
+      "Don't usar #000 ni blanco puro como fondo de la app.",
+      "Don't abrir un modal cuando una edición inline o un panel progresivo resuelve lo mismo.",
+      "Don't elevar con sombra en hover: las sombras grandes son solo de modales y toasts."
+    ]
+  }
+}
