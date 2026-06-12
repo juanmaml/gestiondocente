@@ -158,6 +158,16 @@ body {
   animation: toast-in 0.18s ease-out;
 }
 
+/* Impresión: fondo blanco y sin sombras (los informes salen limpios) */
+@media print {
+  body {
+    background: #fff;
+  }
+  .card {
+    box-shadow: none;
+  }
+}
+
 /* Scrollbar sutil */
 * {
   scrollbar-width: thin;

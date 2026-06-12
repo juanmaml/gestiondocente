@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
+import { useToast } from "@/components/Toaster";
 import { AutosaveIndicator, useAutosave } from "@/components/Autosave";
-import { saveSessionAction } from "./actions";
+import {
+  movePlannedToNextSessionAction,
+  saveSessionAction,
+} from "./actions";
 
 type SessionData = {
   plannedContent: string | null;
@@ -56,16 +60,48 @@ export function SessionEditor({
   startTime,
   endTime,
   session,
+  next,
 }: {
   classGroupId: string;
   date: string;
   startTime: string;
   endTime: string;
   session: SessionData;
+  /** Próxima sesión programada, para poder pasarle contenido pendiente. */
+  next: { dateKey: string; startTime: string; endTime: string } | null;
 }) {
   const [showPrivate, setShowPrivate] = useState(false);
+  const [moving, startMoving] = useTransition();
+  const toast = useToast();
   const { formRef, status, savedAt, onInput, save } =
     useAutosave(saveSessionAction);
+
+  // Copia el contenido previsto actual (tal y como está escrito, aunque no se
+  // haya guardado aún) al campo "previsto" de la próxima sesión.
+  function moveToNext() {
+    if (!next) return;
+    const field = formRef.current?.elements.namedItem("plannedContent");
+    const content =
+      field instanceof HTMLTextAreaElement ? field.value.trim() : "";
+    if (!content) {
+      toast.info("No hay contenido previsto que pasar.");
+      return;
+    }
+    const formData = new FormData();
+    formData.set("classGroupId", classGroupId);
+    formData.set("nextDate", next.dateKey);
+    formData.set("nextStart", next.startTime);
+    formData.set("nextEnd", next.endTime);
+    formData.set("content", content);
+    startMoving(async () => {
+      try {
+        await movePlannedToNextSessionAction(formData);
+        toast.success("Contenido copiado a la próxima sesión.");
+      } catch {
+        toast.error("No se pudo copiar el contenido.");
+      }
+    });
+  }
 
   return (
     <form
@@ -83,13 +119,26 @@ export function SessionEditor({
       <input type="hidden" name="endTime" value={endTime} />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Field
-          label="Contenido previsto"
-          name="plannedContent"
-          value={session?.plannedContent ?? null}
-          placeholder="Qué tienes planificado para esta sesión…"
-          accent="#6366f1"
-        />
+        <div>
+          <Field
+            label="Contenido previsto"
+            name="plannedContent"
+            value={session?.plannedContent ?? null}
+            placeholder="Qué tienes planificado para esta sesión…"
+            accent="#6366f1"
+          />
+          {next && (
+            <button
+              type="button"
+              onClick={moveToNext}
+              disabled={moving}
+              className="mt-1 text-xs font-medium text-indigo-600 hover:underline disabled:opacity-50"
+              title="¿No ha dado tiempo? Copia lo previsto al campo «previsto» de la próxima sesión"
+            >
+              {moving ? "Copiando…" : "→ Pasar a la próxima sesión"}
+            </button>
+          )}
+        </div>
         <Field
           label="Contenido impartido"
           name="deliveredContent"

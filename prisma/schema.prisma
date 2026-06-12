@@ -23,6 +23,23 @@ model User {
   academicYears AcademicYear[]
   subjects      Subject[]
   students      Student[]
+  holidays      Holiday[]
+}
+
+// ─────────────────────────────────────────────
+// Festivo / día no lectivo (todo el centro)
+// ─────────────────────────────────────────────
+model Holiday {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  name      String // p.ej. "Día de la Constitución"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────
@@ -149,6 +166,7 @@ model ClassSession {
   homework         String? // deberes / tareas
   generalNotes     String? // anotaciones generales
   privateNotes     String? // anotaciones privadas del docente
+  cancelled        Boolean  @default(false) // sesión que no se impartió (excursión, huelga…)
   createdAt        DateTime @default(now())
 
   classGroup   ClassGroup    @relation(fields: [classGroupId], references: [id], onDelete: Cascade)

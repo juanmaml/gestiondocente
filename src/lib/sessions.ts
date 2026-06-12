@@ -6,12 +6,13 @@ export type Slot = { dateKey: string; startTime: string; endTime: string };
 /**
  * Calcula la franja programada anterior y siguiente respecto a una fecha/hora
  * de referencia, basándose en las entradas de horario de la clase.
- * Escanea hasta 21 días en cada dirección.
+ * Escanea hasta 21 días en cada dirección. Los días festivos se saltan.
  */
 export function adjacentSlots(
   entries: SlotEntry[],
   refDateKey: string,
-  refStart: string | undefined
+  refStart: string | undefined,
+  holidays: ReadonlySet<string> = new Set()
 ): { prev: Slot | null; next: Slot | null } {
   if (entries.length === 0) return { prev: null, next: null };
 
@@ -26,6 +27,7 @@ export function adjacentSlots(
     const date = addDays(ref, offset);
     const dow = isoDay(date);
     const dateKey = toDateKey(date);
+    if (offset !== 0 && holidays.has(dateKey)) continue;
     const dayEntries = entries
       .filter((e) => e.dayOfWeek === dow)
       .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
@@ -52,26 +54,32 @@ export function adjacentSlots(
 
 /**
  * Elige la franja por defecto al abrir una clase sin fecha concreta:
- * la de hoy si existe, si no la próxima futura, si no la última pasada.
+ * la de hoy si existe (y no es festivo), si no la próxima futura, si no la
+ * última pasada.
  */
-export function defaultSlot(entries: SlotEntry[]): Slot | null {
+export function defaultSlot(
+  entries: SlotEntry[],
+  holidays: ReadonlySet<string> = new Set()
+): Slot | null {
   if (entries.length === 0) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayKey = toDateKey(today);
   const dow = isoDay(today);
 
-  const todayEntries = entries
-    .filter((e) => e.dayOfWeek === dow)
-    .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-  if (todayEntries.length > 0) {
-    return {
-      dateKey: todayKey,
-      startTime: todayEntries[0].startTime,
-      endTime: todayEntries[0].endTime,
-    };
+  if (!holidays.has(todayKey)) {
+    const todayEntries = entries
+      .filter((e) => e.dayOfWeek === dow)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+    if (todayEntries.length > 0) {
+      return {
+        dateKey: todayKey,
+        startTime: todayEntries[0].startTime,
+        endTime: todayEntries[0].endTime,
+      };
+    }
   }
 
-  const { prev, next } = adjacentSlots(entries, todayKey, undefined);
+  const { prev, next } = adjacentSlots(entries, todayKey, undefined, holidays);
   return next ?? prev;
 }

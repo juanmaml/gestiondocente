@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ModalForm, ModalSubmit } from "@/components/Modal";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { readableText } from "@/lib/colors";
 import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { createScheduleEntryAction } from "../horario/actions";
 import { validateTimeRange } from "../horario/ScheduleForm";
+import { deleteHolidayAction } from "./actions";
 
 const PX_PER_MIN = 1.1;
 /** Redondeo del ratón a múltiplos de 5 minutos. */
@@ -27,6 +29,7 @@ type Entry = {
   color: string;
 };
 type ClassOption = { id: string; label: string };
+type Holiday = { id: string; dateKey: string; name: string };
 
 function hhmm(min: number) {
   const h = String(Math.floor(min / 60)).padStart(2, "0");
@@ -45,11 +48,14 @@ export function WeekGrid({
   days,
   entries,
   classOptions,
+  holidays = [],
 }: {
   days: Day[];
   entries: Entry[];
   classOptions: ClassOption[];
+  holidays?: Holiday[];
 }) {
+  const holidayByDate = new Map(holidays.map((h) => [h.dateKey, h]));
   // Rango preferido en horas (puede ampliarse si hay franjas fuera de él).
   const [prefStart, setPrefStart] = useState(8);
   const [prefEnd, setPrefEnd] = useState(15);
@@ -205,16 +211,36 @@ export function WeekGrid({
           <div className="flex">
             <div className="w-14 shrink-0" />
             <div className="grid flex-1 grid-cols-5 gap-2">
-              {days.map((day) => (
-                <div
-                  key={day.value}
-                  className={`mb-2 rounded-md py-1 text-center text-sm font-medium ${
-                    day.isToday ? "bg-indigo-600 text-white" : "text-gray-600"
-                  }`}
-                >
-                  {day.label}
-                </div>
-              ))}
+              {days.map((day) => {
+                const holiday = holidayByDate.get(day.dateKey);
+                return (
+                  <div
+                    key={day.value}
+                    className={`mb-2 rounded-md py-1 text-center text-sm font-medium ${
+                      day.isToday ? "bg-indigo-600 text-white" : "text-gray-600"
+                    }`}
+                  >
+                    {day.label}
+                    {holiday && (
+                      <span className="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-normal text-amber-700">
+                        🎉 {holiday.name}
+                        <ConfirmDeleteButton
+                          action={deleteHolidayAction}
+                          fields={{ id: holiday.id }}
+                          title="Quitar festivo"
+                          message={`Se quitará el festivo «${holiday.name}» (${day.label}). Las sesiones de ese día volverán a contar en la navegación.`}
+                          confirmLabel="Quitar"
+                          pendingLabel="Quitando…"
+                          successMessage="Festivo eliminado."
+                          className="opacity-50 transition hover:opacity-100"
+                        >
+                          ✕
+                        </ConfirmDeleteButton>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -244,6 +270,7 @@ export function WeekGrid({
             {/* Columnas de días */}
             <div className="grid flex-1 grid-cols-5 gap-2">
               {days.map((day) => {
+                const holiday = holidayByDate.get(day.dateKey);
                 const dayEntries = entries
                   .filter((e) => e.dayOfWeek === day.value)
                   .sort(
@@ -254,10 +281,14 @@ export function WeekGrid({
                 return (
                   <div
                     key={day.value}
-                    className="relative cursor-crosshair select-none rounded-lg bg-gray-50"
+                    className={`relative select-none rounded-lg ${
+                      holiday
+                        ? "bg-amber-50"
+                        : "cursor-crosshair bg-gray-50"
+                    }`}
                     style={{ height: gridHeight }}
                     onMouseDown={(e) => {
-                      if (e.button !== 0) return;
+                      if (e.button !== 0 || holiday) return;
                       // Sobre una franja existente se navega, no se crea.
                       if ((e.target as HTMLElement).closest("a")) return;
                       e.preventDefault();
@@ -286,7 +317,9 @@ export function WeekGrid({
                         <Link
                           key={e.id}
                           href={`/clases/${e.classGroupId}?date=${day.dateKey}&start=${e.startTime}&end=${e.endTime}`}
-                          className="absolute left-1 right-1 overflow-hidden rounded-md p-1.5 text-xs shadow-sm transition hover:brightness-95"
+                          className={`absolute left-1 right-1 overflow-hidden rounded-md p-1.5 text-xs shadow-sm transition hover:brightness-95 ${
+                            holiday ? "opacity-30 saturate-50" : ""
+                          }`}
                           style={{
                             top,
                             height: Math.max(height, 30),

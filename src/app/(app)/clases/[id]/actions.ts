@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { getActiveYear } from "@/lib/year";
 import { fromDateKey } from "@/lib/dates";
+import { pendingConvivencias } from "@/lib/convivencia";
 
 /** Verifica que la clase pertenece al usuario; devuelve la clase o null. */
 async function ownClass(userId: string, classGroupId: string) {
@@ -60,6 +62,89 @@ export async function saveSessionAction(formData: FormData) {
   revalidatePath(`/clases/${classGroupId}`);
 }
 
+/** Marca o desmarca una sesión como cancelada (excursión, huelga…). */
+export async function setSessionCancelledAction(formData: FormData) {
+  const user = await requireUser();
+  const classGroupId = String(formData.get("classGroupId") ?? "");
+  const dateKey = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const cancelled = formData.get("cancelled") === "true";
+  if (!(await ownClass(user.id, classGroupId)) || !dateKey || !startTime) {
+    throw new Error("Sesión no válida.");
+  }
+
+  const date = fromDateKey(dateKey);
+  const dayEnd = new Date(date);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  const existing = await prisma.classSession.findFirst({
+    where: { classGroupId, startTime, date: { gte: date, lt: dayEnd } },
+  });
+  if (existing) {
+    await prisma.classSession.update({
+      where: { id: existing.id },
+      data: { cancelled },
+    });
+  } else if (cancelled) {
+    await prisma.classSession.create({
+      data: { classGroupId, date, startTime, endTime, cancelled },
+    });
+  }
+  revalidatePath(`/clases/${classGroupId}`);
+}
+
+/**
+ * Copia el contenido previsto de la sesión actual a la siguiente sesión
+ * programada (cuando no ha dado tiempo a impartirlo). Si la próxima sesión ya
+ * tiene contenido previsto, lo añade al final.
+ */
+export async function movePlannedToNextSessionAction(formData: FormData) {
+  const user = await requireUser();
+  const classGroupId = String(formData.get("classGroupId") ?? "");
+  const nextDateKey = String(formData.get("nextDate") ?? "");
+  const nextStart = String(formData.get("nextStart") ?? "");
+  const nextEnd = String(formData.get("nextEnd") ?? "");
+  const content = String(formData.get("content") ?? "").trim();
+  if (
+    !(await ownClass(user.id, classGroupId)) ||
+    !nextDateKey ||
+    !nextStart ||
+    !content
+  ) {
+    throw new Error("No hay contenido que pasar o falta la próxima sesión.");
+  }
+
+  const date = fromDateKey(nextDateKey);
+  const dayEnd = new Date(date);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+
+  const existing = await prisma.classSession.findFirst({
+    where: { classGroupId, startTime: nextStart, date: { gte: date, lt: dayEnd } },
+  });
+  if (existing) {
+    await prisma.classSession.update({
+      where: { id: existing.id },
+      data: {
+        plannedContent: existing.plannedContent
+          ? `${existing.plannedContent}\n${content}`
+          : content,
+      },
+    });
+  } else {
+    await prisma.classSession.create({
+      data: {
+        classGroupId,
+        date,
+        startTime: nextStart,
+        endTime: nextEnd,
+        plannedContent: content,
+      },
+    });
+  }
+  revalidatePath(`/clases/${classGroupId}`);
+}
+
 // ── Matrículas ─────────────────────────────────────────────
 export async function enrollStudentAction(formData: FormData) {
   const user = await requireUser();
@@ -107,7 +192,9 @@ export async function unenrollStudentAction(formData: FormData) {
 }
 
 // ── Anotaciones sobre alumnos ──────────────────────────────
-export async function createStudentNoteAction(formData: FormData) {
+export async function createStudentNoteAction(
+  formData: FormData
+): Promise<{ pendingConvivencias: number | null }> {
   const user = await requireUser();
   const classGroupId = String(formData.get("classGroupId") ?? "");
   const studentId = String(formData.get("studentId") ?? "");
@@ -130,6 +217,22 @@ export async function createStudentNoteAction(formData: FormData) {
     },
   });
   revalidatePath(`/clases/${classGroupId}`);
+
+  // Tras registrar una convivencia (o un parte), devuelve el acumulado del
+  // alumno en el curso activo para que la interfaz pueda avisar.
+  if (type !== "convivencia" && type !== "parte") {
+    return { pendingConvivencias: null };
+  }
+  const year = await getActiveYear(user.id);
+  const conductNotes = await prisma.studentNote.findMany({
+    where: {
+      studentId,
+      type: { in: ["convivencia", "parte"] },
+      classGroup: { subject: { academicYearId: year.id } },
+    },
+    select: { type: true, date: true, createdAt: true },
+  });
+  return { pendingConvivencias: pendingConvivencias(conductNotes) };
 }
 
 export async function deleteStudentNoteAction(formData: FormData) {

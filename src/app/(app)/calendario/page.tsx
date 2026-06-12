@@ -11,6 +11,7 @@ import {
   formatDateShort,
 } from "@/lib/dates";
 import { WeekGrid } from "./WeekGrid";
+import { HolidayButton } from "./HolidayButton";
 
 export default async function CalendarioPage({
   searchParams,
@@ -75,6 +76,19 @@ export default async function CalendarioPage({
     };
   });
 
+  // Festivos de la semana mostrada.
+  const holidayRows = await prisma.holiday.findMany({
+    where: {
+      userId: user.id,
+      date: { gte: monday, lt: addDays(monday, 7) },
+    },
+  });
+  const holidays = holidayRows.map((h) => ({
+    id: h.id,
+    dateKey: toDateKey(h.date),
+    name: h.name,
+  }));
+
   return (
     <div className="p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -85,6 +99,7 @@ export default async function CalendarioPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <HolidayButton defaultDate={toDateKey(monday)} />
           <Link
             href={`/calendario?week=${prevWeek}`}
             className="btn-secondary"
@@ -119,7 +134,12 @@ export default async function CalendarioPage({
           </Link>
         </div>
       ) : (
-        <WeekGrid days={days} entries={entries} classOptions={classOptions} />
+        <WeekGrid
+          days={days}
+          entries={entries}
+          classOptions={classOptions}
+          holidays={holidays}
+        />
       )}
     </div>
   );

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-type ToastKind = "success" | "error" | "info";
+type ToastKind = "success" | "error" | "info" | "warning";
 type Toast = { id: number; kind: ToastKind; message: string };
 
 const KIND_STYLES: Record<ToastKind, { icon: string; classes: string }> = {
@@ -25,12 +25,17 @@ const KIND_STYLES: Record<ToastKind, { icon: string; classes: string }> = {
     icon: "ℹ",
     classes: "border-indigo-200 bg-indigo-50 text-indigo-800",
   },
+  warning: {
+    icon: "⚠",
+    classes: "border-amber-200 bg-amber-50 text-amber-800",
+  },
 };
 
 const ToastContext = createContext<{
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 } | null>(null);
 
 export function useToast() {
@@ -53,10 +58,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const push = useCallback(
-    (kind: ToastKind, message: string) => {
+    (kind: ToastKind, message: string, duration = 4500) => {
       const id = ++nextId.current;
       setToasts((current) => [...current, { id, kind, message }]);
-      setTimeout(() => dismiss(id), 4500);
+      setTimeout(() => dismiss(id), duration);
     },
     [dismiss]
   );
@@ -66,6 +71,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       success: (message: string) => push("success", message),
       error: (message: string) => push("error", message),
       info: (message: string) => push("info", message),
+      // Los avisos importantes (p. ej. convivencias) duran más en pantalla.
+      warning: (message: string) => push("warning", message, 9000),
     }),
     [push]
   );

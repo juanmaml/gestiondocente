@@ -2,6 +2,8 @@
 
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { useToast } from "@/components/Toaster";
+import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -20,6 +22,8 @@ const NOTE_TYPES = [
   { value: "positiva", label: "Positiva", color: "#059669" },
   { value: "negativa", label: "Negativa", color: "#dc2626" },
   { value: "incidencia", label: "Incidencia", color: "#ea580c" },
+  { value: "convivencia", label: "Convivencia", color: "#c026d3" },
+  { value: "parte", label: "Parte", color: "#0f766e" },
   { value: "general", label: "General", color: "#6b7280" },
 ];
 
@@ -40,6 +44,30 @@ export function StudentNotesPanel({
   students: Student[];
   notes: Note[];
 }) {
+  const toast = useToast();
+
+  // Guarda la anotación y, si es de convivencia, avisa del acumulado:
+  // al llegar al límite corresponde tramitar un parte.
+  async function saveNote(formData: FormData) {
+    const studentId = String(formData.get("studentId") ?? "");
+    const type = String(formData.get("type") ?? "");
+    const result = await createStudentNoteAction(formData);
+    const student = students.find((s) => s.id === studentId);
+    const name = student ? `${student.firstName} ${student.lastName}` : "El alumno";
+    const pending = result?.pendingConvivencias;
+    if (type === "parte") {
+      toast.info(`Parte registrado: el contador de convivencias de ${name} vuelve a cero.`);
+    } else if (pending != null && pending >= CONVIVENCIA_LIMIT) {
+      toast.warning(
+        `${name} acumula ${pending} convivencias sin parte: corresponde tramitar un parte.`
+      );
+    } else if (pending != null && pending > 0) {
+      toast.info(
+        `${name} lleva ${pending} convivencia(s) de ${CONVIVENCIA_LIMIT} desde el último parte.`
+      );
+    }
+  }
+
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -60,7 +88,7 @@ export function StudentNotesPanel({
         >
           {(close) => (
             <ModalForm
-              action={createStudentNoteAction}
+              action={saveNote}
               close={close}
               className="space-y-4"
               successMessage="Anotación guardada."

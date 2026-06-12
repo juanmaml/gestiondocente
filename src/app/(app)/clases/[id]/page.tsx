@@ -10,8 +10,14 @@ import {
 } from "@/lib/dates";
 import { readableText } from "@/lib/colors";
 import { adjacentSlots, defaultSlot } from "@/lib/sessions";
+import { getActiveYear } from "@/lib/year";
+import { pendingConvivenciasByStudent } from "@/lib/convivencia";
+import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { SessionEditor } from "./SessionEditor";
 import { StudentNotesPanel } from "./StudentNotesPanel";
+import { RandomStudentButton } from "./RandomStudentButton";
+import { CancelSessionButton } from "./CancelSessionButton";
+import { ImportStudentsButton } from "../../alumnos/ImportStudentsButton";
 import { EnrollButtons } from "./EnrollPanel";
 import { NewAssessmentButton } from "./NewAssessmentButton";
 import { GradesEditor } from "./GradesEditor";
@@ -74,6 +80,15 @@ export default async function ClassPage({
   const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "sesion";
   const color = cls.subject.color;
 
+  // Festivos del docente: se saltan al navegar entre sesiones.
+  const holidayRows = await prisma.holiday.findMany({
+    where: { userId: user.id },
+  });
+  const holidays = new Set(holidayRows.map((h) => toDateKey(h.date)));
+  const holidayName = new Map(
+    holidayRows.map((h) => [toDateKey(h.date), h.name])
+  );
+
   // ── Resolución de la sesión mostrada ─────────────────────
   // Prioridad: fecha+hora de la URL > franja por defecto (hoy/próxima/última).
   let slot: { dateKey: string; startTime: string; endTime: string } | null = null;
@@ -92,7 +107,7 @@ export default async function ClassPage({
       slot = { dateKey: sp.date, startTime: "09:00", endTime: "10:00" };
     }
   } else {
-    slot = defaultSlot(cls.scheduleEntries);
+    slot = defaultSlot(cls.scheduleEntries, holidays);
   }
 
   // Datos de la sesión seleccionada.
@@ -134,7 +149,7 @@ export default async function ClassPage({
   }
 
   const { prev, next } = slot
-    ? adjacentSlots(cls.scheduleEntries, slot.dateKey, slot.startTime)
+    ? adjacentSlots(cls.scheduleEntries, slot.dateKey, slot.startTime, holidays)
     : { prev: null, next: null };
 
   const slotHref = (s: { dateKey: string; startTime: string; endTime: string }) =>
@@ -264,9 +279,17 @@ export default async function ClassPage({
             <p className="text-sm opacity-80">{cls.subject.name}</p>
             <h1 className="text-2xl font-bold">{cls.name}</h1>
           </div>
-          <p className="text-right text-sm opacity-90">
-            {students.length} alumno(s)
-          </p>
+          <div className="flex items-center gap-3 text-sm opacity-90">
+            <span>{students.length} alumno(s)</span>
+            <RandomStudentButton
+              classGroupId={cls.id}
+              students={students.map((s) => ({
+                id: s.id,
+                firstName: s.firstName,
+                lastName: s.lastName,
+              }))}
+            />
+          </div>
         </div>
       </div>
 
@@ -312,7 +335,7 @@ export default async function ClassPage({
                     {session ? "" : " · sesión sin guardar todavía"}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {prev ? (
                     <Link href={slotHref(prev)} className="btn-secondary">
                       ← Sesión anterior
@@ -330,31 +353,64 @@ export default async function ClassPage({
                   ) : (
                     <span className="btn-secondary opacity-40">Próxima sesión →</span>
                   )}
-                </div>
-              </div>
-
-              <div className="grid gap-5 lg:grid-cols-3">
-                <div className="card p-4 lg:col-span-2">
-                  {/* La key remonta el editor al cambiar de sesión: sin ella,
-                      los textareas no controlados conservarían el texto de la
-                      sesión anterior. */}
-                  <SessionEditor
-                    key={`${slot.dateKey}-${slot.startTime}`}
+                  <CancelSessionButton
                     classGroupId={cls.id}
                     date={slot.dateKey}
                     startTime={slot.startTime}
                     endTime={slot.endTime}
-                    session={session}
+                    cancelled={session?.cancelled ?? false}
                   />
                 </div>
-                <StudentNotesPanel
-                  classGroupId={cls.id}
-                  date={slot.dateKey}
-                  sessionId={session?.id ?? null}
-                  students={students}
-                  notes={sessionNotes}
-                />
               </div>
+
+              {holidays.has(slot.dateKey) && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+                  🎉 Este día está marcado como festivo
+                  {holidayName.get(slot.dateKey)
+                    ? `: ${holidayName.get(slot.dateKey)}`
+                    : ""}
+                  . La navegación entre sesiones lo salta.
+                </div>
+              )}
+
+              {session?.cancelled ? (
+                <div className="card flex flex-col items-center gap-2 px-6 py-12 text-center">
+                  <p className="text-2xl" aria-hidden="true">
+                    🚫
+                  </p>
+                  <p className="font-medium text-gray-700">
+                    Sesión cancelada (no impartida)
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Esta sesión no cuenta en el historial. Usa «Restaurar
+                    sesión» si fue un error.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-5 lg:grid-cols-3">
+                  <div className="card p-4 lg:col-span-2">
+                    {/* La key remonta el editor al cambiar de sesión: sin ella,
+                        los textareas no controlados conservarían el texto de la
+                        sesión anterior. */}
+                    <SessionEditor
+                      key={`${slot.dateKey}-${slot.startTime}`}
+                      classGroupId={cls.id}
+                      date={slot.dateKey}
+                      startTime={slot.startTime}
+                      endTime={slot.endTime}
+                      session={session}
+                      next={next}
+                    />
+                  </div>
+                  <StudentNotesPanel
+                    classGroupId={cls.id}
+                    date={slot.dateKey}
+                    sessionId={session?.id ?? null}
+                    students={students}
+                    notes={sessionNotes}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -536,10 +592,17 @@ export default async function ClassPage({
                   />
                   <Link
                     href={`/clases/${cls.id}?date=${toDateKey(h.date)}&start=${h.startTime}&end=${h.endTime}`}
-                    className="text-sm font-semibold capitalize text-gray-900 hover:text-indigo-600"
+                    className={`text-sm font-semibold capitalize hover:text-indigo-600 ${
+                      h.cancelled ? "text-gray-400 line-through" : "text-gray-900"
+                    }`}
                   >
                     {formatDateLong(h.date)} · {h.startTime}–{h.endTime}
                   </Link>
+                  {h.cancelled && (
+                    <span className="chip ml-2 bg-gray-100 text-gray-500">
+                      🚫 Cancelada
+                    </span>
+                  )}
                   <div className="mt-1 space-y-1 text-sm text-gray-600">
                     {h.deliveredContent && (
                       <p>
@@ -617,11 +680,27 @@ async function AlumnosTab({
     noteCount.set(n.studentId, (noteCount.get(n.studentId) ?? 0) + 1);
   }
 
+  // Convivencias pendientes de parte (en todo el curso activo, no solo en
+  // esta clase: el límite es del alumno, no de la asignatura).
+  const year = await getActiveYear(userId);
+  const conductNotes = await prisma.studentNote.findMany({
+    where: {
+      studentId: { in: [...enrolledIds] },
+      type: { in: ["convivencia", "parte"] },
+      classGroup: { subject: { academicYearId: year.id } },
+    },
+    select: { studentId: true, type: true, date: true, createdAt: true },
+  });
+  const convivencias = pendingConvivenciasByStudent(conductNotes);
+
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">{students.length} alumno(s) matriculado(s)</p>
-        <EnrollButtons classGroupId={classGroupId} available={available} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportStudentsButton fixedClassId={classGroupId} />
+          <EnrollButtons classGroupId={classGroupId} available={available} />
+        </div>
       </div>
       {students.length === 0 ? (
         <div className="card px-6 py-12 text-center text-gray-400">
@@ -635,6 +714,7 @@ async function AlumnosTab({
                 <th className="px-4 py-2.5">Alumno</th>
                 <th className="px-4 py-2.5">Email</th>
                 <th className="px-4 py-2.5">Anotaciones</th>
+                <th className="px-4 py-2.5">Convivencias</th>
                 <th className="px-4 py-2.5"></th>
               </tr>
             </thead>
@@ -655,6 +735,9 @@ async function AlumnosTab({
                   <td className="px-4 py-2.5 text-gray-500">{s.email ?? "—"}</td>
                   <td className="px-4 py-2.5 text-gray-500">
                     {noteCount.get(s.id) ?? 0}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <ConvivenciaBadge count={convivencias.get(s.id) ?? 0} />
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <ConfirmDeleteButton
@@ -710,6 +793,7 @@ async function loadHistory(classGroupId: string) {
     deliveredContent: s.deliveredContent,
     homework: s.homework,
     generalNotes: s.generalNotes,
+    cancelled: s.cancelled,
     noteCount: s._count.studentNotes,
   }));
 }

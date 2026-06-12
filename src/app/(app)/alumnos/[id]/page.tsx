@@ -5,18 +5,28 @@ import { requireUser } from "@/lib/session";
 import { getActiveYear } from "@/lib/year";
 import { readableText } from "@/lib/colors";
 import { formatDateShort } from "@/lib/dates";
+import {
+  CONVIVENCIA_LIMIT,
+  pendingConvivencias,
+} from "@/lib/convivencia";
 import { Avatar } from "@/components/Avatar";
+import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { EditStudentButton } from "./EditStudentButton";
 
 const NOTE_TYPES = [
   { value: "positiva", label: "Positiva", color: "#059669" },
   { value: "negativa", label: "Negativa", color: "#dc2626" },
   { value: "incidencia", label: "Incidencia", color: "#ea580c" },
+  { value: "convivencia", label: "Convivencia", color: "#c026d3" },
+  { value: "parte", label: "Parte", color: "#0f766e" },
   { value: "general", label: "General", color: "#6b7280" },
 ];
 
 function noteMeta(type: string) {
-  return NOTE_TYPES.find((t) => t.value === type) ?? NOTE_TYPES[3];
+  return (
+    NOTE_TYPES.find((t) => t.value === type) ??
+    NOTE_TYPES[NOTE_TYPES.length - 1]
+  );
 }
 
 /** Color de la media: rojo <5, ámbar <7, verde a partir de 7. */
@@ -100,11 +110,18 @@ export default async function StudentProfilePage({
   }));
   const globalAvg = average(allForAvg);
   const gradedCount = grades.filter((g) => g.score != null).length;
-  const noteCounts = { positiva: 0, negativa: 0, incidencia: 0, general: 0 };
+  const noteCounts: Record<string, number> = {
+    positiva: 0,
+    negativa: 0,
+    incidencia: 0,
+    convivencia: 0,
+    parte: 0,
+    general: 0,
+  };
   for (const n of notes) {
-    noteCounts[n.type as keyof typeof noteCounts] =
-      (noteCounts[n.type as keyof typeof noteCounts] ?? 0) + 1;
+    noteCounts[n.type] = (noteCounts[n.type] ?? 0) + 1;
   }
+  const pendingConv = pendingConvivencias(notes);
 
   // ── Datos por clase ──────────────────────────────────────
   const gradesByClass = new Map<string, typeof grades>();
@@ -172,16 +189,51 @@ export default async function StudentProfilePage({
               </div>
             </div>
           </div>
-          <EditStudentButton
-            student={{
-              id: student.id,
-              firstName: student.firstName,
-              lastName: student.lastName,
-              email: student.email,
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/alumnos/${student.id}/informe`}
+              className="btn-secondary"
+              title="Informe imprimible para tutorías o reuniones con familias"
+            >
+              🖨️ Informe
+            </Link>
+            <EditStudentButton
+              student={{
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                email: student.email,
+              }}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Aviso de convivencias acumuladas */}
+      {pendingConv > 0 && (
+        <div
+          className={`mb-5 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+            pendingConv >= CONVIVENCIA_LIMIT
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}
+        >
+          <ConvivenciaBadge count={pendingConv} />
+          {pendingConv >= CONVIVENCIA_LIMIT ? (
+            <span>
+              Acumula {pendingConv} convivencias desde el último parte:
+              <strong> corresponde tramitar un parte</strong>. Cuando lo hagas,
+              regístralo como anotación de tipo «Parte» para reiniciar el
+              contador.
+            </span>
+          ) : (
+            <span>
+              Lleva {pendingConv} convivencia(s) de {CONVIVENCIA_LIMIT} desde
+              el último parte.
+            </span>
+          )}
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

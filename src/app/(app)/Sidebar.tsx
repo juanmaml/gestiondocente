@@ -60,7 +60,7 @@ export function Sidebar({
   return (
     <>
       {/* Top bar móvil */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:hidden">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:hidden print:hidden">
         <div className="flex items-center gap-2">
           <span className="font-semibold">Gestión Docente</span>
           {activeYearName && (
@@ -81,7 +81,7 @@ export function Sidebar({
       <aside
         className={`${
           open ? "block" : "hidden"
-        } w-full shrink-0 border-r border-gray-200 bg-white md:block md:w-64`}
+        } w-full shrink-0 border-r border-gray-200 bg-white md:block md:w-64 print:hidden`}
       >
         <div className="flex h-full flex-col p-4">
           <Link href="/calendario" className="mb-6 flex items-center gap-2 px-2">
