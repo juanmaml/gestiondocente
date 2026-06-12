@@ -187,7 +187,7 @@ Interacción refinada y contenida: estados sutiles, transiciones de colores de 1
 - **Label:** siempre encima del campo, 14px peso 500.
 
 ### Navigation
-- Barra lateral persistente con selector de curso académico y navegación principal; el elemento activo se marca con fondo tintado índigo, no solo con color de texto. Ficha de clase organizada en pestañas (Sesión, Alumnos, Evaluaciones, Cuaderno, Grupos, Historial, Mes).
+- Barra lateral persistente con selector de curso académico y navegación principal; el elemento activo se marca con fondo tintado índigo, no solo con color de texto. Ficha de clase organizada en cuatro pestañas (Sesión, Alumnos, Calificaciones, Historial): los grupos de trabajo viven dentro de Alumnos, el cuaderno y los evaluables dentro de Calificaciones, y la vista de mes es un conmutador dentro de Historial.
 
 ### Calendario semanal (componente firma)
 La pantalla de inicio: rejilla de semana tipo timesheet donde cada bloque lleva el color de su asignatura con texto legible automático, muestra asignatura, clase y horas, y al hacer clic abre la sesión de ese día. Es la materialización de «el calendario es el hogar»: debe ser siempre lo más vivo y colorido de la app.

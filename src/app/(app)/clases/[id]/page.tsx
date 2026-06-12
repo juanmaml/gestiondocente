@@ -37,12 +37,18 @@ import {
 const TABS = [
   { key: "sesion", label: "Sesión" },
   { key: "alumnos", label: "Alumnos" },
-  { key: "evaluaciones", label: "Evaluaciones" },
-  { key: "cuaderno", label: "Cuaderno" },
-  { key: "grupos", label: "Grupos" },
+  { key: "calificaciones", label: "Calificaciones" },
   { key: "historial", label: "Historial" },
-  { key: "mes", label: "Mes" },
 ] as const;
+
+// La ficha pasó de 7 a 4 pestañas; los enlaces guardados con las claves
+// antiguas siguen funcionando.
+const TAB_ALIASES: Record<string, { tab: string; vista?: string }> = {
+  evaluaciones: { tab: "calificaciones" },
+  cuaderno: { tab: "calificaciones" },
+  grupos: { tab: "alumnos" },
+  mes: { tab: "historial", vista: "mes" },
+};
 
 export default async function ClassPage({
   params,
@@ -51,6 +57,7 @@ export default async function ClassPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{
     tab?: string;
+    vista?: string;
     date?: string;
     start?: string;
     end?: string;
@@ -79,7 +86,11 @@ export default async function ClassPage({
   if (!cls) notFound();
 
   const students = cls.enrollments.map((e) => e.student);
-  const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "sesion";
+  const alias = sp.tab ? TAB_ALIASES[sp.tab] : undefined;
+  const tab =
+    alias?.tab ??
+    (TABS.some((t) => t.key === sp.tab) ? sp.tab! : "sesion");
+  const vista = alias?.vista ?? sp.vista;
   const color = cls.subject.color;
 
   // Festivos del docente: se saltan al navegar entre sesiones.
@@ -166,7 +177,7 @@ export default async function ClassPage({
 
   // ── Datos por pestaña ────────────────────────────────────
   let assessments: Awaited<ReturnType<typeof loadAssessments>> = [];
-  if (tab === "evaluaciones") assessments = await loadAssessments(cls.id);
+  if (tab === "calificaciones") assessments = await loadAssessments(cls.id);
 
   let groups: {
     id: string;
@@ -175,7 +186,7 @@ export default async function ClassPage({
     memberIds: string[];
     memberNames: string[];
   }[] = [];
-  if (tab === "grupos" || tab === "evaluaciones") {
+  if (tab === "alumnos" || tab === "calificaciones") {
     const raw = await prisma.studentGroup.findMany({
       where: { classGroupId: cls.id },
       orderBy: { name: "asc" },
@@ -193,7 +204,7 @@ export default async function ClassPage({
   }
 
   let history: Awaited<ReturnType<typeof loadHistory>> = [];
-  if (tab === "historial") history = await loadHistory(cls.id);
+  if (tab === "historial" && vista !== "mes") history = await loadHistory(cls.id);
 
   let gradebook: {
     columns: {
@@ -210,7 +221,7 @@ export default async function ClassPage({
       scores: Record<string, number | null>;
     }[];
   } | null = null;
-  if (tab === "cuaderno") {
+  if (tab === "calificaciones") {
     const items = await prisma.assessmentItem.findMany({
       where: { classGroupId: cls.id },
       orderBy: [{ date: "asc" }, { createdAt: "asc" }],
@@ -243,7 +254,7 @@ export default async function ClassPage({
     month: number;
     marks: Map<string, DayMarks>;
   } | null = null;
-  if (tab === "mes") {
+  if (tab === "historial" && vista === "mes") {
     const now = new Date();
     let y = now.getFullYear();
     let m = now.getMonth();
@@ -425,30 +436,79 @@ export default async function ClassPage({
         </div>
       )}
 
-      {/* ── Pestaña Alumnos ── */}
+      {/* ── Pestaña Alumnos: matrícula + grupos de trabajo ── */}
       {tab === "alumnos" && (
-        <AlumnosTab classGroupId={cls.id} students={students} userId={user.id} />
-      )}
-
-      {/* ── Pestaña Evaluaciones ── */}
-      {tab === "evaluaciones" && (
         <div>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              {plural(
-                assessments.length,
-                "elemento evaluable",
-                "elementos evaluables"
-              )}
-            </p>
-            <NewAssessmentButton classGroupId={cls.id} />
+          <AlumnosTab classGroupId={cls.id} students={students} userId={user.id} />
+
+          <div className="mt-8 mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Grupos de trabajo
+              </h2>
+              <p className="text-sm text-gray-500">
+                Para evaluaciones grupales (Tecnología, proyectos…)
+              </p>
+            </div>
+            <NewGroupButton classGroupId={cls.id} />
           </div>
-          {assessments.length === 0 ? (
-            <div className="card px-6 py-12 text-center text-gray-400">
-              Crea tareas, exámenes o trabajos para evaluar a tus alumnos.
+          {groups.length === 0 ? (
+            <div className="card px-6 py-8 text-center text-sm text-gray-400">
+              Aún no hay grupos de trabajo en esta clase.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {groups.map((g) => (
+                <GroupCard
+                  key={g.id}
+                  classGroupId={cls.id}
+                  group={g}
+                  students={students}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Pestaña Calificaciones: cuaderno + gestión de evaluables ── */}
+      {tab === "calificaciones" && (
+        <div>
+          {assessments.length === 0 ? (
+            <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <p className="text-gray-400">
+                Crea tareas, exámenes o trabajos para empezar a calificar.
+              </p>
+              <NewAssessmentButton classGroupId={cls.id} />
+            </div>
+          ) : (
+            <>
+              {gradebook && (
+                <Gradebook
+                  classGroupId={cls.id}
+                  columns={gradebook.columns}
+                  rows={gradebook.rows}
+                />
+              )}
+
+              <div className="mt-8 mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Evaluables
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {plural(
+                      assessments.length,
+                      "elemento evaluable",
+                      "elementos evaluables"
+                    )}{" "}
+                    · aquí se gestionan detalles, observaciones y notas
+                    grupales
+                  </p>
+                </div>
+                <NewAssessmentButton classGroupId={cls.id} />
+              </div>
+              <div className="space-y-4">
               {assessments.map((a) => {
                 const expanded = sp.eval === a.id;
                 return (
@@ -483,7 +543,7 @@ export default async function ClassPage({
                       </div>
                       <div className="flex items-center gap-3">
                         <Link
-                          href={`/clases/${cls.id}?tab=evaluaciones${expanded ? "" : `&eval=${a.id}`}`}
+                          href={`/clases/${cls.id}?tab=calificaciones${expanded ? "" : `&eval=${a.id}`}`}
                           className="text-sm font-medium text-indigo-600 hover:underline"
                         >
                           {expanded ? "Cerrar" : "Calificar"}
@@ -546,52 +606,55 @@ export default async function ClassPage({
                   </div>
                 );
               })}
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}
 
-      {/* ── Pestaña Cuaderno del profesor ── */}
-      {tab === "cuaderno" && gradebook && (
-        <Gradebook
-          classGroupId={cls.id}
-          columns={gradebook.columns}
-          rows={gradebook.rows}
-        />
-      )}
-
-      {/* ── Pestaña Grupos ── */}
-      {tab === "grupos" && (
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Grupos de trabajo para evaluaciones grupales (Tecnología, proyectos…)
-            </p>
-            <NewGroupButton classGroupId={cls.id} />
-          </div>
-          {groups.length === 0 ? (
-            <div className="card px-6 py-12 text-center text-gray-400">
-              Aún no hay grupos de trabajo en esta clase.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {groups.map((g) => (
-                <GroupCard
-                  key={g.id}
-                  classGroupId={cls.id}
-                  group={g}
-                  students={students}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Pestaña Historial ── */}
+      {/* ── Pestaña Historial: lista o vista de mes ── */}
       {tab === "historial" && (
         <div>
-          {history.length === 0 ? (
+          <div
+            className="mb-4 flex w-fit items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-0.5"
+            role="group"
+            aria-label="Vista del historial"
+          >
+            <Link
+              href={tabHref("historial")}
+              aria-current={vista !== "mes" ? "page" : undefined}
+              className={`rounded-md px-3 py-1 text-sm transition ${
+                vista !== "mes"
+                  ? "bg-indigo-50 font-medium text-indigo-700"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Lista
+            </Link>
+            <Link
+              href={`${tabHref("historial")}&vista=mes`}
+              aria-current={vista === "mes" ? "page" : undefined}
+              className={`rounded-md px-3 py-1 text-sm transition ${
+                vista === "mes"
+                  ? "bg-indigo-50 font-medium text-indigo-700"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Mes
+            </Link>
+          </div>
+
+          {vista === "mes" ? (
+            monthData && (
+              <MonthCalendar
+                classGroupId={cls.id}
+                year={monthData.year}
+                month={monthData.month}
+                marks={monthData.marks}
+                scheduledDows={new Set(cls.scheduleEntries.map((e) => e.dayOfWeek))}
+              />
+            )
+          ) : history.length === 0 ? (
             <div className="card px-6 py-12 text-center text-gray-400">
               Todavía no hay sesiones guardadas en esta clase.
             </div>
@@ -652,16 +715,6 @@ export default async function ClassPage({
         </div>
       )}
 
-      {/* ── Pestaña Mes ── */}
-      {tab === "mes" && monthData && (
-        <MonthCalendar
-          classGroupId={cls.id}
-          year={monthData.year}
-          month={monthData.month}
-          marks={monthData.marks}
-          scheduledDows={new Set(cls.scheduleEntries.map((e) => e.dayOfWeek))}
-        />
-      )}
     </div>
   );
 }

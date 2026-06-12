@@ -46,14 +46,14 @@ export function MonthCalendar({
         </h3>
         <div className="flex gap-1">
           <Link
-            href={`/clases/${classGroupId}?tab=mes&month=${prevMonth}`}
+            href={`/clases/${classGroupId}?tab=historial&vista=mes&month=${prevMonth}`}
             className="btn-ghost px-2 py-1"
             aria-label="Mes anterior"
           >
             ←
           </Link>
           <Link
-            href={`/clases/${classGroupId}?tab=mes&month=${nextMonth}`}
+            href={`/clases/${classGroupId}?tab=historial&vista=mes&month=${nextMonth}`}
             className="btn-ghost px-2 py-1"
             aria-label="Mes siguiente"
           >
