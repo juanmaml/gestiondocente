@@ -12,7 +12,7 @@ import { ControlledModal } from "@/components/Modal";
 import { PlusIcon } from "@/components/icons";
 import { classAverage } from "@/lib/grades";
 import { plural } from "@/lib/plural";
-import { NewAssessmentForm } from "./NewAssessmentForm";
+import { AssessmentForm } from "./AssessmentForm";
 import { saveGradebookAction } from "./actions";
 
 type Column = {
@@ -406,7 +406,7 @@ export function Gradebook({
         onClose={() => setCreating(false)}
         title="Nuevo elemento evaluable"
       >
-        {(close) => <NewAssessmentForm classGroupId={classGroupId} close={close} />}
+        {(close) => <AssessmentForm classGroupId={classGroupId} close={close} />}
       </ControlledModal>
     </>
   );

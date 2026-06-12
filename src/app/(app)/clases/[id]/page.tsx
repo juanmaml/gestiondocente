@@ -21,6 +21,7 @@ import { CancelSessionButton } from "./CancelSessionButton";
 import { ImportStudentsButton } from "../../alumnos/ImportStudentsButton";
 import { EnrollButtons } from "./EnrollPanel";
 import { GradesEditor } from "./GradesEditor";
+import { EditAssessmentButton } from "./EditAssessmentButton";
 import { GroupGradesEditor } from "./GroupGradesEditor";
 import { NewGroupButton, GroupCard } from "./GroupsPanel";
 import { MonthCalendar, type DayMarks } from "./MonthCalendar";
@@ -534,7 +535,23 @@ export default async function ClassPage({
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <EditAssessmentButton
+                    classGroupId={cls.id}
+                    assessment={{
+                      id: selectedAssessment.id,
+                      title: selectedAssessment.title,
+                      type: selectedAssessment.type,
+                      date: selectedAssessment.date
+                        ? toDateKey(selectedAssessment.date)
+                        : null,
+                      maxScore: selectedAssessment.maxScore,
+                      weight: selectedAssessment.weight,
+                      term: selectedAssessment.term,
+                      description: selectedAssessment.description,
+                      isGroup: selectedAssessment.isGroup,
+                    }}
+                  />
                   <ConfirmDeleteButton
                     action={deleteAssessmentAction}
                     fields={{ id: selectedAssessment.id, classGroupId: cls.id }}

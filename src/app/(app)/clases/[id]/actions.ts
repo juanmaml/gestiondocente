@@ -273,6 +273,34 @@ export async function createAssessmentAction(formData: FormData) {
   revalidatePath(`/clases/${classGroupId}`);
 }
 
+export async function updateAssessmentAction(formData: FormData) {
+  const user = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const classGroupId = String(formData.get("classGroupId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const item = await prisma.assessmentItem.findFirst({
+    where: { id, classGroup: { subject: { userId: user.id } } },
+  });
+  if (!item || !title) throw new Error("Faltan datos del evaluable.");
+
+  // El carácter grupal no se edita: cambiarlo con notas ya puestas mezclaría
+  // calificación individual y por grupos.
+  const dateKey = str(formData.get("date"));
+  await prisma.assessmentItem.update({
+    where: { id },
+    data: {
+      title,
+      type: String(formData.get("type") ?? "tarea"),
+      description: str(formData.get("description")),
+      maxScore: num(formData.get("maxScore")) ?? item.maxScore,
+      weight: num(formData.get("weight")),
+      term: str(formData.get("term")),
+      date: dateKey ? fromDateKey(dateKey) : null,
+    },
+  });
+  revalidatePath(`/clases/${classGroupId}`);
+}
+
 export async function deleteAssessmentAction(formData: FormData) {
   const user = await requireUser();
   const id = String(formData.get("id") ?? "");
