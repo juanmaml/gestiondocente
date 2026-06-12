@@ -13,6 +13,7 @@ import { Avatar } from "@/components/Avatar";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { PrinterIcon } from "@/components/icons";
 import { plural } from "@/lib/plural";
+import { averageOfAverages, classAverage } from "@/lib/grades";
 import { EditStudentButton } from "./EditStudentButton";
 
 const NOTE_TYPES = [
@@ -39,15 +40,13 @@ function avgColor(avg: number | null): string {
   return "#059669";
 }
 
-/** Media sobre 10 normalizando cada nota por su puntuación máxima. */
-function average(
-  grades: { score: number | null; maxScore: number }[]
-): number | null {
-  const vals = grades
-    .filter((g) => g.score != null && g.maxScore > 0)
-    .map((g) => (g.score! / g.maxScore) * 10);
-  if (vals.length === 0) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+/** Datos mínimos para la media: nota, máximo y peso del evaluable. */
+function forAverage(grades: { score: number | null; assessmentItem: { maxScore: number; weight: number | null } }[]) {
+  return grades.map((g) => ({
+    score: g.score,
+    maxScore: g.assessmentItem.maxScore,
+    weight: g.assessmentItem.weight,
+  }));
 }
 
 export default async function StudentProfilePage({
@@ -105,12 +104,25 @@ export default async function StudentProfilePage({
     }),
   ]);
 
-  // ── KPIs globales ────────────────────────────────────────
-  const allForAvg = grades.map((g) => ({
-    score: g.score,
-    maxScore: g.assessmentItem.maxScore,
-  }));
-  const globalAvg = average(allForAvg);
+  // ── Medias por clase y global ────────────────────────────
+  // La global es la media de las medias por clase: cada clase cuenta igual
+  // y los pesos de una asignatura no afectan a las demás.
+  const gradesByClass = new Map<string, typeof grades>();
+  for (const g of grades) {
+    const key = g.assessmentItem.classGroupId;
+    const list = gradesByClass.get(key) ?? [];
+    list.push(g);
+    gradesByClass.set(key, list);
+  }
+  const classAvgById = new Map(
+    [...gradesByClass].map(([classId, list]) => [
+      classId,
+      classAverage(forAverage(list)),
+    ])
+  );
+  const globalAvg = averageOfAverages(
+    [...classAvgById.values()].map((r) => r.value)
+  );
   const gradedCount = grades.filter((g) => g.score != null).length;
   const noteCounts: Record<string, number> = {
     positiva: 0,
@@ -126,13 +138,6 @@ export default async function StudentProfilePage({
   const pendingConv = pendingConvivencias(notes);
 
   // ── Datos por clase ──────────────────────────────────────
-  const gradesByClass = new Map<string, typeof grades>();
-  for (const g of grades) {
-    const key = g.assessmentItem.classGroupId;
-    const list = gradesByClass.get(key) ?? [];
-    list.push(g);
-    gradesByClass.set(key, list);
-  }
   const groupsByClass = new Map<string, string[]>();
   for (const m of memberships) {
     const key = m.studentGroup.classGroupId;
@@ -249,7 +254,7 @@ export default async function StudentProfilePage({
           >
             {globalAvg == null ? "—" : globalAvg.toFixed(2)}
           </p>
-          <p className="text-xs text-gray-400">sobre 10, normalizada</p>
+          <p className="text-xs text-gray-400">media de sus clases, sobre 10</p>
         </div>
         <div className="card p-4">
           <p className="text-xs uppercase tracking-wide text-gray-400">
@@ -307,12 +312,8 @@ export default async function StudentProfilePage({
                   const db = b.assessmentItem.date?.getTime() ?? 0;
                   return db - da;
                 });
-              const classAvg = average(
-                classGrades.map((g) => ({
-                  score: g.score,
-                  maxScore: g.assessmentItem.maxScore,
-                }))
-              );
+              const classAvgResult = classAvgById.get(cls.id);
+              const classAvg = classAvgResult?.value ?? null;
               const groups = groupsByClass.get(cls.id) ?? [];
 
               return (
@@ -328,7 +329,7 @@ export default async function StudentProfilePage({
                       {cls.subject.name} · {cls.name}
                     </Link>
                     <span className="text-sm">
-                      Media:{" "}
+                      {classAvgResult?.weighted ? "Media ponderada:" : "Media:"}{" "}
                       <strong>
                         {classAvg == null ? "—" : classAvg.toFixed(2)}
                       </strong>

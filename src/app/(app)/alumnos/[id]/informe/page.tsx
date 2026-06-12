@@ -8,6 +8,7 @@ import {
   CONVIVENCIA_LIMIT,
   pendingConvivencias,
 } from "@/lib/convivencia";
+import { averageOfAverages, classAverage } from "@/lib/grades";
 import { PrintButton } from "@/components/PrintButton";
 import { WarningIcon } from "@/components/icons";
 
@@ -20,15 +21,13 @@ const NOTE_LABELS: Record<string, string> = {
   general: "General",
 };
 
-/** Media sobre 10 normalizando cada nota por su puntuación máxima. */
-function average(
-  grades: { score: number | null; maxScore: number }[]
-): number | null {
-  const vals = grades
-    .filter((g) => g.score != null && g.maxScore > 0)
-    .map((g) => (g.score! / g.maxScore) * 10);
-  if (vals.length === 0) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+/** Datos mínimos para la media: nota, máximo y peso del evaluable. */
+function forAverage(grades: { score: number | null; assessmentItem: { maxScore: number; weight: number | null } }[]) {
+  return grades.map((g) => ({
+    score: g.score,
+    maxScore: g.assessmentItem.maxScore,
+    weight: g.assessmentItem.weight,
+  }));
 }
 
 /**
@@ -77,9 +76,6 @@ export default async function StudentReportPage({
     }),
   ]);
 
-  const globalAvg = average(
-    grades.map((g) => ({ score: g.score, maxScore: g.assessmentItem.maxScore }))
-  );
   const pendingConv = pendingConvivencias(notes);
 
   const gradesByClass = new Map<string, typeof grades>();
@@ -89,6 +85,16 @@ export default async function StudentReportPage({
     list.push(g);
     gradesByClass.set(key, list);
   }
+  // Media global = media de las medias por clase (ponderadas si procede).
+  const classAvgById = new Map(
+    [...gradesByClass].map(([classId, list]) => [
+      classId,
+      classAverage(forAverage(list)),
+    ])
+  );
+  const globalAvg = averageOfAverages(
+    [...classAvgById.values()].map((r) => r.value)
+  );
 
   return (
     <div className="mx-auto max-w-3xl p-6 print:max-w-none print:p-0">
@@ -172,18 +178,15 @@ export default async function StudentReportPage({
                 (b.assessmentItem.date?.getTime() ?? 0) -
                 (a.assessmentItem.date?.getTime() ?? 0)
             );
-          const classAvg = average(
-            classGrades.map((g) => ({
-              score: g.score,
-              maxScore: g.assessmentItem.maxScore,
-            }))
-          );
+          const classAvgResult = classAvgById.get(cls.id);
+          const classAvg = classAvgResult?.value ?? null;
           return (
             <div key={cls.id} className="mb-5 break-inside-avoid">
               <h3 className="mb-1 font-semibold text-gray-800">
                 {cls.subject.name} · {cls.name}
                 <span className="ml-2 font-normal text-gray-500">
-                  Media: {classAvg == null ? "—" : classAvg.toFixed(2)}
+                  {classAvgResult?.weighted ? "Media ponderada" : "Media"}:{" "}
+                  {classAvg == null ? "—" : classAvg.toFixed(2)}
                 </span>
               </h3>
               {classGrades.length === 0 ? (

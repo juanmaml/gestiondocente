@@ -6,6 +6,8 @@ import {
   focusNextOnEnter,
   useAutosave,
 } from "@/components/Autosave";
+import { classAverage } from "@/lib/grades";
+import { plural } from "@/lib/plural";
 import { saveGradebookAction } from "./actions";
 
 type Column = {
@@ -13,6 +15,7 @@ type Column = {
   title: string;
   type: string;
   maxScore: number;
+  weight: number | null;
   isGroup: boolean;
 };
 type Row = {
@@ -29,20 +32,14 @@ const TYPE_COLOR: Record<string, string> = {
   otro: "#6b7280",
 };
 
-/** Nota normalizada a base 10 según la puntuación máxima del evaluable. */
-function normalized(score: number | null, maxScore: number): number | null {
-  if (score == null || !maxScore) return null;
-  return (score / maxScore) * 10;
-}
-
 function studentAverage(row: Row, columns: Column[]): number | null {
-  const vals: number[] = [];
-  for (const c of columns) {
-    const n = normalized(row.scores[c.id] ?? null, c.maxScore);
-    if (n != null) vals.push(n);
-  }
-  if (vals.length === 0) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+  return classAverage(
+    columns.map((c) => ({
+      score: row.scores[c.id] ?? null,
+      maxScore: c.maxScore,
+      weight: c.weight,
+    }))
+  ).value;
 }
 
 function avgColor(avg: number | null): string {
@@ -89,8 +86,16 @@ export function Gradebook({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">
           Alumnos en filas, evaluables en columnas. Las notas se guardan solas
-          al dejar de escribir; Enter baja al siguiente alumno. La media es una
-          media simple normalizada sobre 10.
+          al dejar de escribir; Enter baja al siguiente alumno.{" "}
+          {columns.every((c) => c.weight != null)
+            ? "La media pondera cada evaluable por su peso."
+            : columns.some((c) => c.weight != null)
+              ? `Media simple sobre 10: ${plural(
+                  columns.filter((c) => c.weight == null).length,
+                  "evaluable sin peso impide",
+                  "evaluables sin peso impiden"
+                )} ponderar.`
+              : "La media es una media simple normalizada sobre 10."}
         </p>
         <div className="flex items-center gap-3">
           <AutosaveIndicator status={status} savedAt={savedAt} />
@@ -116,7 +121,9 @@ export function Gradebook({
                 <th
                   key={c.id}
                   className="px-2 py-2 text-center align-bottom"
-                  title={`${c.title} · ${c.type} · máx. ${c.maxScore}`}
+                  title={`${c.title} · ${c.type} · máx. ${c.maxScore}${
+                    c.weight != null ? ` · peso ${c.weight}%` : ""
+                  }`}
                 >
                   <div className="mx-auto flex w-24 flex-col items-center gap-1">
                     <span
@@ -132,7 +139,10 @@ export function Gradebook({
                     <span className="line-clamp-2 text-xs font-medium text-gray-700">
                       {c.title}
                     </span>
-                    <span className="text-[10px] text-gray-400">/{c.maxScore}</span>
+                    <span className="text-[10px] text-gray-400">
+                      /{c.maxScore}
+                      {c.weight != null ? ` · ${c.weight}%` : ""}
+                    </span>
                   </div>
                 </th>
               ))}

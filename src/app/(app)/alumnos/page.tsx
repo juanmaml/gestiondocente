@@ -6,6 +6,11 @@ import {
   CONVIVENCIA_LIMIT,
   pendingConvivenciasByStudent,
 } from "@/lib/convivencia";
+import {
+  averageOfAverages,
+  classAverage,
+  type GradeForAverage,
+} from "@/lib/grades";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
 import { WarningIcon } from "@/components/icons";
@@ -47,7 +52,9 @@ export default async function AlumnosPage() {
       select: {
         studentId: true,
         score: true,
-        assessmentItem: { select: { maxScore: true } },
+        assessmentItem: {
+          select: { maxScore: true, weight: true, classGroupId: true },
+        },
       },
     }),
     prisma.studentNote.findMany({
@@ -65,17 +72,31 @@ export default async function AlumnosPage() {
   );
 
   // ── Alumnos que requieren atención ───────────────────────
+  // Media por alumno con la misma regla que el resto de la app: ponderada
+  // dentro de cada clase si procede, y media de medias entre clases.
   const avgByStudent = new Map<string, number>();
   {
-    const acc = new Map<string, number[]>();
+    const byStudentClass = new Map<string, GradeForAverage[]>();
     for (const g of grades) {
-      if (g.score == null || g.assessmentItem.maxScore <= 0) continue;
-      const list = acc.get(g.studentId) ?? [];
-      list.push((g.score / g.assessmentItem.maxScore) * 10);
-      acc.set(g.studentId, list);
+      const key = `${g.studentId}|${g.assessmentItem.classGroupId}`;
+      const list = byStudentClass.get(key) ?? [];
+      list.push({
+        score: g.score,
+        maxScore: g.assessmentItem.maxScore,
+        weight: g.assessmentItem.weight,
+      });
+      byStudentClass.set(key, list);
     }
-    for (const [id, vals] of acc) {
-      avgByStudent.set(id, vals.reduce((a, b) => a + b, 0) / vals.length);
+    const classAvgs = new Map<string, (number | null)[]>();
+    for (const [key, list] of byStudentClass) {
+      const studentId = key.slice(0, key.indexOf("|"));
+      const acc = classAvgs.get(studentId) ?? [];
+      acc.push(classAverage(list).value);
+      classAvgs.set(studentId, acc);
+    }
+    for (const [id, vals] of classAvgs) {
+      const avg = averageOfAverages(vals);
+      if (avg != null) avgByStudent.set(id, avg);
     }
   }
   const negativesByStudent = new Map<string, number>();

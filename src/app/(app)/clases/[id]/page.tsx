@@ -201,6 +201,7 @@ export default async function ClassPage({
       title: string;
       type: string;
       maxScore: number;
+      weight: number | null;
       isGroup: boolean;
     }[];
     rows: {
@@ -221,6 +222,7 @@ export default async function ClassPage({
         title: a.title,
         type: a.type,
         maxScore: a.maxScore,
+        weight: a.weight,
         isGroup: a.isGroup,
       })),
       rows: students.map((s) => ({
