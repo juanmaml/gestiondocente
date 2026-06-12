@@ -12,6 +12,7 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { PrinterIcon } from "@/components/icons";
+import { plural } from "@/lib/plural";
 import { EditStudentButton } from "./EditStudentButton";
 
 const NOTE_TYPES = [
@@ -229,8 +230,8 @@ export default async function StudentProfilePage({
             </span>
           ) : (
             <span>
-              Lleva {pendingConv} convivencia(s) de {CONVIVENCIA_LIMIT} desde
-              el último parte.
+              Lleva {plural(pendingConv, "convivencia")} de {CONVIVENCIA_LIMIT}{" "}
+              desde el último parte.
             </span>
           )}
         </div>
@@ -255,7 +256,9 @@ export default async function StudentProfilePage({
             Calificaciones
           </p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{gradedCount}</p>
-          <p className="text-xs text-gray-400">evaluable(s) calificado(s)</p>
+          <p className="text-xs text-gray-400">
+            {gradedCount === 1 ? "evaluable calificado" : "evaluables calificados"}
+          </p>
         </div>
         <div className="card p-4">
           <p className="text-xs uppercase tracking-wide text-gray-400">
@@ -265,7 +268,7 @@ export default async function StudentProfilePage({
             {noteCounts.positiva}
           </p>
           <p className="text-xs text-gray-400">
-            de {notes.length} anotación(es)
+            de {plural(notes.length, "anotación", "anotaciones")}
           </p>
         </div>
         <div className="card p-4">
@@ -276,8 +279,8 @@ export default async function StudentProfilePage({
             {noteCounts.negativa + noteCounts.incidencia}
           </p>
           <p className="text-xs text-gray-400">
-            {noteCounts.negativa} negativa(s) · {noteCounts.incidencia}{" "}
-            incidencia(s)
+            {plural(noteCounts.negativa, "negativa")} ·{" "}
+            {plural(noteCounts.incidencia, "incidencia")}
           </p>
         </div>
       </div>

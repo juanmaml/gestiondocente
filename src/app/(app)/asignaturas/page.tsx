@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { getActiveYear } from "@/lib/year";
 import { readableText } from "@/lib/colors";
+import { plural } from "@/lib/plural";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { NewSubjectButton } from "./SubjectForm";
@@ -28,7 +29,7 @@ export default async function AsignaturasPage() {
     <div className="p-6">
       <PageHeader
         title="Asignaturas"
-        subtitle={`Curso ${year.name} · ${subjects.length} asignatura(s)`}
+        subtitle={`Curso ${year.name} · ${plural(subjects.length, "asignatura")}`}
       >
         <NewSubjectButton />
       </PageHeader>
@@ -76,7 +77,7 @@ export default async function AsignaturasPage() {
                         >
                           <span className="font-medium">{cls.name}</span>
                           <span className="text-xs text-gray-400">
-                            {cls._count.enrollments} alumno(s)
+                            {plural(cls._count.enrollments, "alumno")}
                           </span>
                         </Link>
                       </li>

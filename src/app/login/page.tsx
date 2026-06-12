@@ -7,7 +7,7 @@ export default async function LoginPage() {
   if (session?.user?.id) redirect("/calendario");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-slate-100 p-4">
+    <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">

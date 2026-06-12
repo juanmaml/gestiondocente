@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { SearchIcon } from "@/components/icons";
+import { plural } from "@/lib/plural";
 import { deleteStudentAction } from "./actions";
 
 type Chip = { id: string; label: string; color: string };
@@ -60,7 +61,7 @@ export function StudentsTable({ students }: { students: StudentRow[] }) {
         </div>
         {query && (
           <p className="mt-1.5 text-xs text-gray-400">
-            {visible.length} de {students.length} alumno(s)
+            {visible.length} de {plural(students.length, "alumno")}
           </p>
         )}
       </div>

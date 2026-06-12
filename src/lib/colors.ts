@@ -11,6 +11,20 @@ export const SUBJECT_COLORS = [
   "#475569", // slate
 ];
 
+/** Nombre legible de cada color de asignatura (para lectores de pantalla). */
+export const SUBJECT_COLOR_NAMES: Record<string, string> = {
+  "#4f46e5": "índigo",
+  "#0891b2": "cian",
+  "#059669": "esmeralda",
+  "#ca8a04": "ámbar",
+  "#dc2626": "rojo",
+  "#db2777": "rosa",
+  "#7c3aed": "violeta",
+  "#ea580c": "naranja",
+  "#0d9488": "verde azulado",
+  "#475569": "gris pizarra",
+};
+
 /** Color de texto legible (negro/blanco) sobre un color de fondo hex. */
 export function readableText(hex: string): string {
   const c = hex.replace("#", "");

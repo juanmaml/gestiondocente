@@ -7,6 +7,7 @@ import { Avatar } from "@/components/Avatar";
 import { useToast } from "@/components/Toaster";
 import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
 import { readableText } from "@/lib/colors";
+import { plural } from "@/lib/plural";
 import {
   createStudentNoteAction,
   deleteStudentNoteAction,
@@ -203,7 +204,7 @@ export function StudentNotesPanel({
       );
     } else if (pending != null && pending > 0) {
       toast.info(
-        `${name} lleva ${pending} convivencia(s) de ${CONVIVENCIA_LIMIT} desde el último parte.`
+        `${name} lleva ${plural(pending, "convivencia")} de ${CONVIVENCIA_LIMIT} desde el último parte.`
       );
     }
   }

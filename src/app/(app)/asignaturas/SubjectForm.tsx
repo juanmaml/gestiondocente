@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
-import { SUBJECT_COLORS } from "@/lib/colors";
+import { SUBJECT_COLORS, SUBJECT_COLOR_NAMES } from "@/lib/colors";
 import { createSubjectAction } from "./actions";
 
 function ColorPicker({ name }: { name: string }) {
@@ -21,7 +21,8 @@ function ColorPicker({ name }: { name: string }) {
             className={`h-8 w-8 rounded-full ring-offset-2 transition ${
               color === c ? "ring-2 ring-gray-800" : ""
             }`}
-            aria-label={c}
+            aria-label={`Color ${SUBJECT_COLOR_NAMES[c] ?? c}`}
+            aria-pressed={color === c}
           />
         ))}
       </div>

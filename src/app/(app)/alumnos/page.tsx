@@ -9,6 +9,7 @@ import {
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
 import { WarningIcon } from "@/components/icons";
+import { plural } from "@/lib/plural";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { NewStudentButton } from "./StudentForm";
 import { ImportStudentsButton } from "./ImportStudentsButton";
@@ -113,7 +114,7 @@ export default async function AlumnosPage() {
     <div className="p-6">
       <PageHeader
         title="Alumnos"
-        subtitle={`${students.length} alumno(s) en total · Curso ${year.name}`}
+        subtitle={`${plural(students.length, "alumno")} en total · Curso ${year.name}`}
       >
         <ImportStudentsButton classes={classOptions} />
         <NewStudentButton />

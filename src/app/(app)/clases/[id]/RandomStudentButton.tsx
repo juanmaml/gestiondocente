@@ -104,7 +104,9 @@ export function RandomStudentButton({
               <p className="text-xs text-gray-400">
                 {roundRestarted
                   ? "Ronda completada: vuelve a empezar."
-                  : `Quedan ${Math.max(remaining, 0)} alumno(s) en esta ronda.`}
+                  : Math.max(remaining, 0) === 1
+                    ? "Queda 1 alumno en esta ronda."
+                    : `Quedan ${Math.max(remaining, 0)} alumnos en esta ronda.`}
               </p>
             </div>
             <div className="mt-5 flex justify-center gap-2">

@@ -1,4 +1,5 @@
 import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
+import { plural } from "@/lib/plural";
 import { WarningIcon } from "./icons";
 
 const COLOR = "#c026d3"; // fucsia: color del tipo de anotación "convivencia"
@@ -24,7 +25,7 @@ export function ConvivenciaBadge({ count }: { count: number }) {
     <span
       className="chip"
       style={{ background: `${COLOR}22`, color: COLOR }}
-      title={`${count} convivencia(s) desde el último parte`}
+      title={`${plural(count, "convivencia")} desde el último parte`}
     >
       {count} de {CONVIVENCIA_LIMIT}
     </span>

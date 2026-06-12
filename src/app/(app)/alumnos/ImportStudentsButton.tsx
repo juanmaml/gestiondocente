@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { useToast } from "@/components/Toaster";
 import { UploadIcon } from "@/components/icons";
+import { plural } from "@/lib/plural";
 import { parseStudentList } from "@/lib/students";
 import { importStudentsAction } from "./actions";
 
@@ -41,9 +42,11 @@ export function ImportStudentsButton({
           action={async (formData) => {
             const result = await importStudentsAction(formData);
             toast.success(
-              `${result.created} alumno(s) importados${
-                result.enrolled ? " y matriculados en la clase" : ""
-              }.`
+              result.created === 1
+                ? `1 alumno importado${result.enrolled ? " y matriculado en la clase" : ""}.`
+                : `${result.created} alumnos importados${
+                    result.enrolled ? " y matriculados en la clase" : ""
+                  }.`
             );
             setText("");
           }}
@@ -103,7 +106,8 @@ export function ImportStudentsButton({
               ) : (
                 <>
                   <span className="font-medium text-gray-700">
-                    Se importarán {parsed.length} alumno(s):
+                    Se importará{parsed.length === 1 ? "" : "n"}{" "}
+                    {plural(parsed.length, "alumno")}:
                   </span>{" "}
                   <span className="text-gray-500">
                     {parsed
@@ -122,7 +126,7 @@ export function ImportStudentsButton({
               Cancelar
             </button>
             <ModalSubmit pendingLabel="Importando…">
-              Importar {parsed.length > 0 ? `${parsed.length} alumno(s)` : ""}
+              Importar {parsed.length > 0 ? plural(parsed.length, "alumno") : ""}
             </ModalSubmit>
           </div>
         </ModalForm>

@@ -12,6 +12,7 @@ import { readableText } from "@/lib/colors";
 import { adjacentSlots, defaultSlot } from "@/lib/sessions";
 import { getActiveYear } from "@/lib/year";
 import { pendingConvivenciasByStudent } from "@/lib/convivencia";
+import { plural } from "@/lib/plural";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { SessionEditor } from "./SessionEditor";
 import { StudentNotesPanel } from "./StudentNotesPanel";
@@ -281,7 +282,7 @@ export default async function ClassPage({
             <h1 className="text-2xl font-bold">{cls.name}</h1>
           </div>
           <div className="flex items-center gap-3 text-sm opacity-90">
-            <span>{students.length} alumno(s)</span>
+            <span>{plural(students.length, "alumno")}</span>
             <RandomStudentButton
               classGroupId={cls.id}
               students={students.map((s) => ({
@@ -342,7 +343,9 @@ export default async function ClassPage({
                       ← Sesión anterior
                     </Link>
                   ) : (
-                    <span className="btn-secondary opacity-40">← Sesión anterior</span>
+                    <span className="btn-secondary opacity-40" aria-disabled="true">
+                      ← Sesión anterior
+                    </span>
                   )}
                   <Link href={`/clases/${cls.id}`} className="btn-secondary">
                     Hoy
@@ -352,7 +355,9 @@ export default async function ClassPage({
                       Próxima sesión →
                     </Link>
                   ) : (
-                    <span className="btn-secondary opacity-40">Próxima sesión →</span>
+                    <span className="btn-secondary opacity-40" aria-disabled="true">
+                      Próxima sesión →
+                    </span>
                   )}
                   <CancelSessionButton
                     classGroupId={cls.id}
@@ -428,7 +433,11 @@ export default async function ClassPage({
         <div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              {assessments.length} elemento(s) evaluable(s)
+              {plural(
+                assessments.length,
+                "elemento evaluable",
+                "elementos evaluables"
+              )}
             </p>
             <NewAssessmentButton classGroupId={cls.id} />
           </div>
@@ -463,7 +472,7 @@ export default async function ClassPage({
                           Máx. {a.maxScore}
                           {a.weight != null ? ` · Peso ${a.weight}%` : ""}
                           {a.gradedCount > 0
-                            ? ` · ${a.gradedCount} calificación(es)`
+                            ? ` · ${plural(a.gradedCount, "calificación", "calificaciones")}`
                             : ""}
                         </p>
                         {a.description && (
@@ -585,7 +594,7 @@ export default async function ClassPage({
               Todavía no hay sesiones guardadas en esta clase.
             </div>
           ) : (
-            <ol className="relative ml-3 space-y-6 border-l-2 border-gray-200 pl-6">
+            <ol className="relative ml-3 space-y-6 border-l border-gray-200 pl-6">
               {history.map((h) => (
                 <li key={h.id} className="relative">
                   <span
@@ -629,7 +638,8 @@ export default async function ClassPage({
                     )}
                     {h.noteCount > 0 && (
                       <p className="text-xs text-gray-400">
-                        {h.noteCount} anotación(es) sobre alumnos
+                        {plural(h.noteCount, "anotación", "anotaciones")} sobre
+                        alumnos
                       </p>
                     )}
                   </div>
@@ -698,7 +708,9 @@ async function AlumnosTab({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-gray-500">{students.length} alumno(s) matriculado(s)</p>
+        <p className="text-sm text-gray-500">
+          {plural(students.length, "alumno matriculado", "alumnos matriculados")}
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <ImportStudentsButton fixedClassId={classGroupId} />
           <EnrollButtons classGroupId={classGroupId} available={available} />
