@@ -214,6 +214,15 @@ export function LockIcon(props: IconProps) {
   );
 }
 
+/** Más (crear, añadir). */
+export function PlusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  );
+}
+
 /** Luna (tema oscuro). */
 export function MoonIcon(props: IconProps) {
   return (

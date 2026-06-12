@@ -20,7 +20,6 @@ import { RandomStudentButton } from "./RandomStudentButton";
 import { CancelSessionButton } from "./CancelSessionButton";
 import { ImportStudentsButton } from "../../alumnos/ImportStudentsButton";
 import { EnrollButtons } from "./EnrollPanel";
-import { NewAssessmentButton } from "./NewAssessmentButton";
 import { GradesEditor } from "./GradesEditor";
 import { GroupGradesEditor } from "./GroupGradesEditor";
 import { NewGroupButton, GroupCard } from "./GroupsPanel";
@@ -33,6 +32,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   SunIcon,
+  XIcon,
 } from "@/components/icons";
 import {
   deleteAssessmentAction,
@@ -181,8 +181,11 @@ export default async function ClassPage({
   };
 
   // ── Datos por pestaña ────────────────────────────────────
-  let assessments: Awaited<ReturnType<typeof loadAssessments>> = [];
-  if (tab === "calificaciones") assessments = await loadAssessments(cls.id);
+  // Detalle del evaluable abierto desde la cabecera de columna del cuaderno.
+  const selectedAssessment =
+    tab === "calificaciones" && sp.eval
+      ? await loadAssessment(cls.id, sp.eval)
+      : null;
 
   let groups: {
     id: string;
@@ -476,143 +479,124 @@ export default async function ClassPage({
         </div>
       )}
 
-      {/* ── Pestaña Calificaciones: cuaderno + gestión de evaluables ── */}
-      {tab === "calificaciones" && (
+      {/* ── Pestaña Calificaciones: el cuaderno es la única superficie ── */}
+      {tab === "calificaciones" && gradebook && (
         <div>
-          {assessments.length === 0 ? (
-            <div className="card flex flex-col items-center gap-3 px-6 py-12 text-center">
-              <p className="text-gray-400">
-                Crea tareas, exámenes o trabajos para empezar a calificar.
-              </p>
-              <NewAssessmentButton classGroupId={cls.id} />
-            </div>
-          ) : (
-            <>
-              {gradebook && (
-                <Gradebook
-                  classGroupId={cls.id}
-                  columns={gradebook.columns}
-                  rows={gradebook.rows}
-                />
-              )}
+          <Gradebook
+            classGroupId={cls.id}
+            columns={gradebook.columns}
+            rows={gradebook.rows}
+            groups={groups}
+            selectedId={selectedAssessment?.id ?? null}
+          />
 
-              <div className="mt-8 mb-4 flex flex-wrap items-center justify-between gap-2">
+          {/* Detalle del evaluable abierto desde la cabecera de columna */}
+          {selectedAssessment && (
+            <div className="card mt-6 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Evaluables
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {plural(
-                      assessments.length,
-                      "elemento evaluable",
-                      "elementos evaluables"
-                    )}{" "}
-                    · aquí se gestionan detalles, observaciones y notas
-                    grupales
-                  </p>
-                </div>
-                <NewAssessmentButton classGroupId={cls.id} />
-              </div>
-              <div className="space-y-4">
-              {assessments.map((a) => {
-                const expanded = sp.eval === a.id;
-                return (
-                  <div key={a.id} className="card p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{a.title}</h3>
-                          <span className="chip bg-gray-100 capitalize text-gray-600">
-                            {a.type}
-                          </span>
-                          {a.isGroup && (
-                            <span className="chip bg-violet-50 text-violet-700">
-                              Grupal
-                            </span>
-                          )}
-                          {a.term && (
-                            <span className="chip bg-sky-50 text-sky-700">{a.term}</span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-sm text-gray-500">
-                          {a.date ? formatDateShort(a.date) + " · " : ""}
-                          Máx. {a.maxScore}
-                          {a.weight != null ? ` · Peso ${a.weight}%` : ""}
-                          {a.gradedCount > 0
-                            ? ` · ${plural(a.gradedCount, "calificación", "calificaciones")}`
-                            : ""}
-                        </p>
-                        {a.description && (
-                          <p className="mt-1 text-sm text-gray-600">{a.description}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href={`/clases/${cls.id}?tab=calificaciones${expanded ? "" : `&eval=${a.id}`}`}
-                          className="text-sm font-medium text-indigo-600 hover:underline"
-                        >
-                          {expanded ? "Cerrar" : "Calificar"}
-                        </Link>
-                        <ConfirmDeleteButton
-                          action={deleteAssessmentAction}
-                          fields={{ id: a.id, classGroupId: cls.id }}
-                          title="Eliminar evaluable"
-                          message={`Se eliminará «${a.title}» y todas sus calificaciones. Esta acción no se puede deshacer.`}
-                          successMessage="Evaluable eliminado."
-                        />
-                      </div>
-                    </div>
-
-                    {expanded && (
-                      <div className="mt-4 border-t border-gray-100 pt-4">
-                        {a.isGroup ? (
-                          <GroupGradesEditor
-                            classGroupId={cls.id}
-                            assessmentItemId={a.id}
-                            maxScore={a.maxScore}
-                            groups={groups.map((g) => ({
-                              id: g.id,
-                              name: g.name,
-                              groupScore:
-                                a.groupGrades.find((gg) => gg.studentGroupId === g.id)
-                                  ?.score ?? null,
-                              members: g.memberIds.map((sid) => {
-                                const st = students.find((s) => s.id === sid);
-                                return {
-                                  studentId: sid,
-                                  name: st
-                                    ? `${st.lastName}, ${st.firstName}`
-                                    : "(alumno)",
-                                  score:
-                                    a.grades.find((gr) => gr.studentId === sid)
-                                      ?.score ?? null,
-                                };
-                              }),
-                            }))}
-                          />
-                        ) : (
-                          <GradesEditor
-                            classGroupId={cls.id}
-                            assessmentItemId={a.id}
-                            maxScore={a.maxScore}
-                            rows={students.map((s) => {
-                              const g = a.grades.find((gr) => gr.studentId === s.id);
-                              return {
-                                studentId: s.id,
-                                name: `${s.lastName}, ${s.firstName}`,
-                                score: g?.score ?? null,
-                                observation: g?.observation ?? null,
-                              };
-                            })}
-                          />
-                        )}
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-900">
+                      {selectedAssessment.title}
+                    </h2>
+                    <span className="chip bg-gray-100 capitalize text-gray-600">
+                      {selectedAssessment.type}
+                    </span>
+                    {selectedAssessment.isGroup && (
+                      <span className="chip bg-violet-50 text-violet-700">
+                        Grupal
+                      </span>
+                    )}
+                    {selectedAssessment.term && (
+                      <span className="chip bg-sky-50 text-sky-700">
+                        {selectedAssessment.term}
+                      </span>
                     )}
                   </div>
-                );
-              })}
+                  <p className="mt-0.5 text-sm text-gray-500">
+                    {selectedAssessment.date
+                      ? formatDateShort(selectedAssessment.date) + " · "
+                      : ""}
+                    Máx. {selectedAssessment.maxScore}
+                    {selectedAssessment.weight != null
+                      ? ` · Peso ${selectedAssessment.weight}%`
+                      : ""}
+                    {selectedAssessment.gradedCount > 0
+                      ? ` · ${plural(selectedAssessment.gradedCount, "calificación", "calificaciones")}`
+                      : ""}
+                  </p>
+                  {selectedAssessment.description && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      {selectedAssessment.description}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <ConfirmDeleteButton
+                    action={deleteAssessmentAction}
+                    fields={{ id: selectedAssessment.id, classGroupId: cls.id }}
+                    title="Eliminar evaluable"
+                    message={`Se eliminará «${selectedAssessment.title}» y todas sus calificaciones. Esta acción no se puede deshacer.`}
+                    successMessage="Evaluable eliminado."
+                  />
+                  <Link
+                    href={tabHref("calificaciones")}
+                    className="btn-ghost px-2 py-1"
+                    aria-label="Cerrar detalle del evaluable"
+                  >
+                    <XIcon />
+                  </Link>
+                </div>
               </div>
-            </>
+
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                {selectedAssessment.isGroup ? (
+                  <GroupGradesEditor
+                    classGroupId={cls.id}
+                    assessmentItemId={selectedAssessment.id}
+                    maxScore={selectedAssessment.maxScore}
+                    groups={groups.map((g) => ({
+                      id: g.id,
+                      name: g.name,
+                      groupScore:
+                        selectedAssessment.groupGrades.find(
+                          (gg) => gg.studentGroupId === g.id
+                        )?.score ?? null,
+                      members: g.memberIds.map((sid) => {
+                        const st = students.find((s) => s.id === sid);
+                        return {
+                          studentId: sid,
+                          name: st
+                            ? `${st.lastName}, ${st.firstName}`
+                            : "(alumno)",
+                          score:
+                            selectedAssessment.grades.find(
+                              (gr) => gr.studentId === sid
+                            )?.score ?? null,
+                        };
+                      }),
+                    }))}
+                  />
+                ) : (
+                  <GradesEditor
+                    classGroupId={cls.id}
+                    assessmentItemId={selectedAssessment.id}
+                    maxScore={selectedAssessment.maxScore}
+                    rows={students.map((s) => {
+                      const g = selectedAssessment.grades.find(
+                        (gr) => gr.studentId === s.id
+                      );
+                      return {
+                        studentId: s.id,
+                        name: `${s.lastName}, ${s.firstName}`,
+                        score: g?.score ?? null,
+                        observation: g?.observation ?? null,
+                      };
+                    })}
+                  />
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -837,19 +821,16 @@ async function AlumnosTab({
 }
 
 // ── Carga de datos auxiliar ────────────────────────────────
-async function loadAssessments(classGroupId: string) {
-  return prisma.assessmentItem
-    .findMany({
-      where: { classGroupId },
-      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-      include: { grades: true, groupGrades: true },
-    })
-    .then((items) =>
-      items.map((a) => ({
-        ...a,
-        gradedCount: a.grades.filter((g) => g.score != null).length,
-      }))
-    );
+async function loadAssessment(classGroupId: string, id: string) {
+  const a = await prisma.assessmentItem.findFirst({
+    where: { id, classGroupId },
+    include: { grades: true, groupGrades: true },
+  });
+  if (!a) return null;
+  return {
+    ...a,
+    gradedCount: a.grades.filter((g) => g.score != null).length,
+  };
 }
 
 async function loadHistory(classGroupId: string) {
