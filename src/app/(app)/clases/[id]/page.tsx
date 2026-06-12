@@ -27,6 +27,7 @@ import { MonthCalendar, type DayMarks } from "./MonthCalendar";
 import { Gradebook } from "./Gradebook";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { BanIcon, SunIcon } from "@/components/icons";
 import {
   deleteAssessmentAction,
   unenrollStudentAction,
@@ -61,7 +62,7 @@ export default async function ClassPage({
   const sp = await searchParams;
 
   const cls = await prisma.classGroup.findFirst({
-    where: { id, subject: { userId: user.id } },
+    where: { id, subject: { userId: user.id, deletedAt: null } },
     include: {
       subject: true,
       scheduleEntries: true,
@@ -364,20 +365,21 @@ export default async function ClassPage({
               </div>
 
               {holidays.has(slot.dateKey) && (
-                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
-                  🎉 Este día está marcado como festivo
-                  {holidayName.get(slot.dateKey)
-                    ? `: ${holidayName.get(slot.dateKey)}`
-                    : ""}
-                  . La navegación entre sesiones lo salta.
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+                  <SunIcon />
+                  <span>
+                    Este día está marcado como festivo
+                    {holidayName.get(slot.dateKey)
+                      ? `: ${holidayName.get(slot.dateKey)}`
+                      : ""}
+                    . La navegación entre sesiones lo salta.
+                  </span>
                 </div>
               )}
 
               {session?.cancelled ? (
                 <div className="card flex flex-col items-center gap-2 px-6 py-12 text-center">
-                  <p className="text-2xl" aria-hidden="true">
-                    🚫
-                  </p>
+                  <BanIcon className="h-8 w-8 text-gray-400" />
                   <p className="font-medium text-gray-700">
                     Sesión cancelada (no impartida)
                   </p>
@@ -600,7 +602,7 @@ export default async function ClassPage({
                   </Link>
                   {h.cancelled && (
                     <span className="chip ml-2 bg-gray-100 text-gray-500">
-                      🚫 Cancelada
+                      <BanIcon className="h-3 w-3" /> Cancelada
                     </span>
                   )}
                   <div className="mt-1 space-y-1 text-sm text-gray-600">

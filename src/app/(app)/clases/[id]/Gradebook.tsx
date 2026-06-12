@@ -159,6 +159,7 @@ export function Gradebook({
                         min={0}
                         max={c.maxScore}
                         defaultValue={r.scores[c.id] ?? ""}
+                        aria-label={`Nota de ${r.name} en ${c.title}`}
                         className="input w-20 px-2 py-1 text-center"
                       />
                     </td>

@@ -7,6 +7,13 @@ import { Spinner } from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toaster";
 import {
+  BookIcon,
+  CalendarIcon,
+  ClockIcon,
+  GraduationCapIcon,
+  MenuIcon,
+} from "@/components/icons";
+import {
   createYearAction,
   logoutAction,
   setActiveYearAction,
@@ -15,10 +22,10 @@ import {
 type Year = { id: string; name: string; isActive: boolean };
 
 const NAV = [
-  { href: "/calendario", label: "Calendario", icon: "📅" },
-  { href: "/asignaturas", label: "Asignaturas", icon: "📚" },
-  { href: "/alumnos", label: "Alumnos", icon: "🧑‍🎓" },
-  { href: "/horario", label: "Horario", icon: "🕒" },
+  { href: "/calendario", label: "Calendario", icon: CalendarIcon },
+  { href: "/asignaturas", label: "Asignaturas", icon: BookIcon },
+  { href: "/alumnos", label: "Alumnos", icon: GraduationCapIcon },
+  { href: "/horario", label: "Horario", icon: ClockIcon },
 ];
 
 export function Sidebar({
@@ -48,11 +55,15 @@ export function Sidebar({
     formData.set("yearId", yearId);
     startYearTransition(async () => {
       try {
-        await setActiveYearAction(formData);
+        const result = await setActiveYearAction(formData);
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
         toast.success(`Ahora estás trabajando en el curso ${name}.`);
         router.push("/calendario");
       } catch {
-        toast.error("No se pudo cambiar de curso.");
+        toast.error("No se pudo cambiar de curso. Comprueba tu conexión.");
       }
     });
   }
@@ -74,7 +85,7 @@ export function Sidebar({
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menú"
         >
-          ☰
+          <MenuIcon className="h-5 w-5" />
         </button>
       </div>
 
@@ -94,7 +105,9 @@ export function Sidebar({
           {/* Curso académico activo */}
           <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
             <p className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              <span>📅 Curso activo</span>
+              <span className="flex items-center gap-1.5">
+                <CalendarIcon className="h-3.5 w-3.5" /> Curso activo
+              </span>
               {changingYear && <Spinner className="h-3.5 w-3.5" />}
             </p>
             {/* La key fuerza el remontado cuando el curso activo cambia en el
@@ -120,12 +133,16 @@ export function Sidebar({
                 action={async (formData) => {
                   const name = String(formData.get("name") ?? "").trim();
                   try {
-                    await createYearAction(formData);
+                    const result = await createYearAction(formData);
+                    if (result?.error) {
+                      toast.error(result.error);
+                      return;
+                    }
                     toast.success(`Curso ${name} creado y activado.`);
                     setAddingYear(false);
                     router.push("/calendario");
                   } catch {
-                    toast.error("No se pudo crear el curso.");
+                    toast.error("No se pudo crear el curso. Comprueba tu conexión.");
                   }
                 }}
                 className="mt-2 flex gap-1"
@@ -138,7 +155,7 @@ export function Sidebar({
                   required
                 />
                 <button className="btn-primary px-2 py-1 text-xs" type="submit">
-                  OK
+                  Crear
                 </button>
               </form>
             ) : (
@@ -165,7 +182,7 @@ export function Sidebar({
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
-                  <span>{item.icon}</span>
+                  <item.icon className="h-4 w-4" />
                   {item.label}
                 </Link>
               );

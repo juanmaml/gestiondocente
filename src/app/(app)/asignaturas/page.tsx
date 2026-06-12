@@ -7,14 +7,14 @@ import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { NewSubjectButton } from "./SubjectForm";
 import { NewClassButton } from "./NewClassButton";
-import { deleteSubjectAction } from "./actions";
+import { deleteSubjectAction, undoDeleteSubjectAction } from "./actions";
 
 export default async function AsignaturasPage() {
   const user = await requireUser();
   const year = await getActiveYear(user.id);
 
   const subjects = await prisma.subject.findMany({
-    where: { userId: user.id, academicYearId: year.id },
+    where: { userId: user.id, academicYearId: year.id, deletedAt: null },
     orderBy: { name: "asc" },
     include: {
       classGroups: {
@@ -52,10 +52,12 @@ export default async function AsignaturasPage() {
                 <h2 className="text-lg font-semibold">{subject.name}</h2>
                 <ConfirmDeleteButton
                   action={deleteSubjectAction}
+                  undoAction={undoDeleteSubjectAction}
                   fields={{ id: subject.id }}
                   title="Eliminar asignatura"
-                  message={`Se eliminará «${subject.name}» con todas sus clases, sesiones, evaluables y calificaciones. Esta acción no se puede deshacer.`}
-                  successMessage="Asignatura eliminada."
+                  message={`Se eliminará «${subject.name}» con todas sus clases, sesiones, evaluables y calificaciones.`}
+                  successMessage={`Asignatura «${subject.name}» eliminada.`}
+                  undoneMessage={`Asignatura «${subject.name}» restaurada.`}
                   className="rounded px-2 py-0.5 text-sm opacity-80 hover:bg-black/10 hover:opacity-100"
                 />
               </div>

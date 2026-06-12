@@ -9,6 +9,7 @@ import {
   pendingConvivencias,
 } from "@/lib/convivencia";
 import { PrintButton } from "@/components/PrintButton";
+import { WarningIcon } from "@/components/icons";
 
 const NOTE_LABELS: Record<string, string> = {
   positiva: "Positiva",
@@ -143,12 +144,14 @@ export default async function StudentReportPage({
             Convivencias sin parte
           </p>
           <p
-            className={`text-xl font-bold ${
+            className={`flex items-center gap-1.5 text-xl font-bold ${
               pendingConv >= CONVIVENCIA_LIMIT ? "text-red-600" : "text-gray-900"
             }`}
           >
             {pendingConv}
-            {pendingConv >= CONVIVENCIA_LIMIT ? " ⚠" : ""}
+            {pendingConv >= CONVIVENCIA_LIMIT && (
+              <WarningIcon className="h-5 w-5" />
+            )}
           </p>
         </div>
       </div>

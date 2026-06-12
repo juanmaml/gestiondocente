@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { DiceIcon } from "@/components/icons";
 
 type Student = { id: string; firstName: string; lastName: string };
 
@@ -73,7 +74,9 @@ export function RandomStudentButton({
         className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium backdrop-blur transition hover:bg-white/30 disabled:opacity-40"
         title="Elegir un alumno al azar (sin repetir hasta completar la ronda)"
       >
-        🎲 Al azar
+        <span className="flex items-center gap-1.5">
+          <DiceIcon /> Al azar
+        </span>
       </button>
 
       {open && picked && (
@@ -113,7 +116,7 @@ export function RandomStudentButton({
                 Cerrar
               </button>
               <button type="button" className="btn-primary" onClick={pick}>
-                🎲 Otro
+                <DiceIcon /> Otro
               </button>
             </div>
           </div>

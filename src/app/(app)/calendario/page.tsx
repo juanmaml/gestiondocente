@@ -33,7 +33,7 @@ export default async function CalendarioPage({
   // Asignaturas con sus clases y franjas del curso activo. Las clases también
   // alimentan el selector del modal de creación por arrastre.
   const subjects = await prisma.subject.findMany({
-    where: { userId: user.id, academicYearId: year.id },
+    where: { userId: user.id, academicYearId: year.id, deletedAt: null },
     orderBy: { name: "asc" },
     include: {
       classGroups: {

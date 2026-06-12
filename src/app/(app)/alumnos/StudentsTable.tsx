@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { SearchIcon } from "@/components/icons";
 import { deleteStudentAction } from "./actions";
 
 type Chip = { id: string; label: string; color: string };
@@ -45,11 +46,8 @@ export function StudentsTable({ students }: { students: StudentRow[] }) {
           Buscar alumnos
         </label>
         <div className="relative">
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          >
-            🔍
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <SearchIcon />
           </span>
           <input
             id="student-search"

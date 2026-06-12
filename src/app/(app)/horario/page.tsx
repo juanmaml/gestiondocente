@@ -13,7 +13,7 @@ export default async function HorarioPage() {
   const year = await getActiveYear(user.id);
 
   const subjects = await prisma.subject.findMany({
-    where: { userId: user.id, academicYearId: year.id },
+    where: { userId: user.id, academicYearId: year.id, deletedAt: null },
     orderBy: { name: "asc" },
     include: {
       classGroups: {
@@ -95,7 +95,7 @@ export default async function HorarioPage() {
                             title="Eliminar franja"
                             message={`Se eliminará la franja de ${e.subjectName} · ${e.className} (${e.startTime}–${e.endTime}) del horario y del calendario.`}
                             successMessage="Franja eliminada."
-                            className="opacity-0 transition group-hover:opacity-80 hover:!opacity-100"
+                            className="rounded opacity-0 transition group-hover:opacity-80 hover:!opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-current"
                           >
                             ✕
                           </ConfirmDeleteButton>

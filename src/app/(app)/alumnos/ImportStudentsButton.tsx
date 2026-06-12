@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
 import { useToast } from "@/components/Toaster";
+import { UploadIcon } from "@/components/icons";
 import { parseStudentList } from "@/lib/students";
 import { importStudentsAction } from "./actions";
 
@@ -31,7 +32,7 @@ export function ImportStudentsButton({
       title="Importar lista de alumnos"
       trigger={(open) => (
         <button className={triggerClassName} onClick={open}>
-          ⇪ Importar lista
+          <UploadIcon /> Importar lista
         </button>
       )}
     >

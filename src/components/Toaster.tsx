@@ -8,25 +8,27 @@ import {
   useRef,
   useState,
 } from "react";
+import { CheckIcon, InfoIcon, WarningIcon, XIcon } from "./icons";
 
 type ToastKind = "success" | "error" | "info" | "warning";
-type Toast = { id: number; kind: ToastKind; message: string };
+type ToastAction = { label: string; onAction: () => void };
+type Toast = { id: number; kind: ToastKind; message: string; action?: ToastAction };
 
-const KIND_STYLES: Record<ToastKind, { icon: string; classes: string }> = {
+const KIND_STYLES: Record<ToastKind, { icon: React.ReactNode; classes: string }> = {
   success: {
-    icon: "✓",
+    icon: <CheckIcon />,
     classes: "border-emerald-200 bg-emerald-50 text-emerald-800",
   },
   error: {
-    icon: "✕",
+    icon: <XIcon />,
     classes: "border-red-200 bg-red-50 text-red-800",
   },
   info: {
-    icon: "ℹ",
+    icon: <InfoIcon />,
     classes: "border-indigo-200 bg-indigo-50 text-indigo-800",
   },
   warning: {
-    icon: "⚠",
+    icon: <WarningIcon />,
     classes: "border-amber-200 bg-amber-50 text-amber-800",
   },
 };
@@ -36,6 +38,8 @@ const ToastContext = createContext<{
   error: (message: string) => void;
   info: (message: string) => void;
   warning: (message: string) => void;
+  /** Toast con botón de acción (p. ej. «Deshacer» tras un borrado). */
+  withAction: (message: string, action: ToastAction, duration?: number) => void;
 } | null>(null);
 
 export function useToast() {
@@ -58,9 +62,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const push = useCallback(
-    (kind: ToastKind, message: string, duration = 4500) => {
+    (kind: ToastKind, message: string, duration = 4500, action?: ToastAction) => {
       const id = ++nextId.current;
-      setToasts((current) => [...current, { id, kind, message }]);
+      setToasts((current) => [...current, { id, kind, message, action }]);
       setTimeout(() => dismiss(id), duration);
     },
     [dismiss]
@@ -73,6 +77,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       info: (message: string) => push("info", message),
       // Los avisos importantes (p. ej. convivencias) duran más en pantalla.
       warning: (message: string) => push("warning", message, 9000),
+      // Dura más para dar tiempo a reaccionar (p. ej. deshacer un borrado).
+      withAction: (message: string, action: ToastAction, duration = 10000) =>
+        push("info", message, duration, action),
     }),
     [push]
   );
@@ -86,17 +93,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={t.id}
-              role="status"
+              // Los errores se anuncian de inmediato al lector de pantalla;
+              // el resto espera a que el usuario esté libre.
+              role={t.kind === "error" ? "alert" : "status"}
               className={`toast-enter pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-sm shadow-lg ${style.classes}`}
             >
-              <span className="mt-0.5 font-bold">{style.icon}</span>
+              <span className="mt-0.5">{style.icon}</span>
               <p className="flex-1">{t.message}</p>
+              {t.action && (
+                <button
+                  onClick={() => {
+                    dismiss(t.id);
+                    t.action!.onAction();
+                  }}
+                  className="shrink-0 font-semibold underline underline-offset-2 hover:opacity-80"
+                >
+                  {t.action.label}
+                </button>
+              )}
               <button
                 onClick={() => dismiss(t.id)}
                 className="opacity-50 transition hover:opacity-100"
                 aria-label="Cerrar aviso"
               >
-                ✕
+                <XIcon />
               </button>
             </div>
           );

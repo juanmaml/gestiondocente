@@ -64,12 +64,14 @@ model AcademicYear {
 // Asignatura
 // ─────────────────────────────────────────────
 model Subject {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String
   academicYearId String
   name           String
-  color          String   @default("#3b82f6")
-  createdAt      DateTime @default(now())
+  color          String    @default("#3b82f6")
+  createdAt      DateTime  @default(now())
+  // Borrado suave: permite «Deshacer» tras eliminar; se purga pasado un tiempo.
+  deletedAt      DateTime?
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)

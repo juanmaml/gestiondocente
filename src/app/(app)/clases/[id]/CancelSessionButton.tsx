@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
 import { useToast } from "@/components/Toaster";
+import { BanIcon } from "@/components/icons";
 import { setSessionCancelledAction } from "./actions";
 
 /** Marca/desmarca la sesión mostrada como cancelada (excursión, huelga…). */
@@ -54,7 +55,8 @@ export function CancelSessionButton({
       }
     >
       {pending && <Spinner className="h-4 w-4" />}
-      {cancelled ? "Restaurar sesión" : "🚫 Cancelar sesión"}
+      {!pending && !cancelled && <BanIcon />}
+      {cancelled ? "Restaurar sesión" : "Cancelar sesión"}
     </button>
   );
 }

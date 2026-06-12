@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ModalForm, ModalSubmit } from "@/components/Modal";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { SunIcon } from "@/components/icons";
 import { readableText } from "@/lib/colors";
 import { WEEKDAYS, timeToMinutes } from "@/lib/dates";
 import { createScheduleEntryAction } from "../horario/actions";
@@ -222,8 +223,14 @@ export function WeekGrid({
                   >
                     {day.label}
                     {holiday && (
-                      <span className="mt-0.5 flex items-center justify-center gap-1 text-[11px] font-normal text-amber-700">
-                        🎉 {holiday.name}
+                      <span
+                        className={`mt-0.5 flex items-center justify-center gap-1 text-[11px] font-normal ${
+                          // Sobre el índigo de «hoy», el ámbar oscuro no
+                          // contrasta: se aclara.
+                          day.isToday ? "text-amber-200" : "text-amber-700"
+                        }`}
+                      >
+                        <SunIcon className="h-3 w-3" /> {holiday.name}
                         <ConfirmDeleteButton
                           action={deleteHolidayAction}
                           fields={{ id: holiday.id }}

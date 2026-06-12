@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, ModalForm, ModalSubmit } from "@/components/Modal";
+import { SunIcon } from "@/components/icons";
 import { createHolidayAction } from "./actions";
 
 /** Marca un día como festivo/no lectivo: se refleja en el calendario y la
@@ -11,7 +12,7 @@ export function HolidayButton({ defaultDate }: { defaultDate: string }) {
       title="Marcar día festivo"
       trigger={(open) => (
         <button className="btn-secondary" onClick={open} title="Añadir festivo">
-          🎉 Festivo
+          <SunIcon /> Festivo
         </button>
       )}
     >

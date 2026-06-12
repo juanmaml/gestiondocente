@@ -8,6 +8,7 @@ import {
 } from "@/lib/convivencia";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
+import { WarningIcon } from "@/components/icons";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
 import { NewStudentButton } from "./StudentForm";
 import { ImportStudentsButton } from "./ImportStudentsButton";
@@ -31,7 +32,7 @@ export default async function AlumnosPage() {
       },
     }),
     prisma.subject.findMany({
-      where: { userId: user.id, academicYearId: year.id },
+      where: { userId: user.id, academicYearId: year.id, deletedAt: null },
       orderBy: { name: "asc" },
       include: { classGroups: { orderBy: { name: "asc" } } },
     }),
@@ -121,8 +122,8 @@ export default async function AlumnosPage() {
       {atRisk.length > 0 && (
         <details className="card group mb-6 overflow-hidden border-amber-200">
           <summary className="flex cursor-pointer select-none items-center justify-between bg-amber-50 px-4 py-2.5 transition hover:bg-amber-50/70 [&::-webkit-details-marker]:hidden">
-            <h2 className="text-sm font-semibold text-amber-800">
-              ⚠️ Requieren atención ({atRisk.length})
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+              <WarningIcon /> Requieren atención ({atRisk.length})
             </h2>
             <span
               aria-hidden="true"

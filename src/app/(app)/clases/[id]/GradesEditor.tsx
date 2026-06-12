@@ -75,6 +75,7 @@ export function GradesEditor({
                     min={0}
                     max={maxScore}
                     defaultValue={r.score ?? ""}
+                    aria-label={`Nota de ${r.name}`}
                     className="input py-1"
                   />
                 </td>
@@ -84,6 +85,7 @@ export function GradesEditor({
                     data-col="obs"
                     defaultValue={r.observation ?? ""}
                     placeholder="opcional"
+                    aria-label={`Observación sobre ${r.name}`}
                     className="input py-1"
                   />
                 </td>

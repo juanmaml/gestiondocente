@@ -11,6 +11,7 @@ import {
 } from "@/lib/convivencia";
 import { Avatar } from "@/components/Avatar";
 import { ConvivenciaBadge } from "@/components/ConvivenciaBadge";
+import { PrinterIcon } from "@/components/icons";
 import { EditStudentButton } from "./EditStudentButton";
 
 const NOTE_TYPES = [
@@ -195,7 +196,7 @@ export default async function StudentProfilePage({
               className="btn-secondary"
               title="Informe imprimible para tutorías o reuniones con familias"
             >
-              🖨️ Informe
+              <PrinterIcon /> Informe
             </Link>
             <EditStudentButton
               student={{

@@ -1,4 +1,5 @@
 import { CONVIVENCIA_LIMIT } from "@/lib/convivencia";
+import { WarningIcon } from "./icons";
 
 const COLOR = "#c026d3"; // fucsia: color del tipo de anotación "convivencia"
 
@@ -15,7 +16,7 @@ export function ConvivenciaBadge({ count }: { count: number }) {
         style={{ background: COLOR, color: "#fff" }}
         title={`${count} convivencias desde el último parte: corresponde tramitar un parte`}
       >
-        ⚠ {count} · parte pendiente
+        <WarningIcon className="h-3 w-3" /> {count} · parte pendiente
       </span>
     );
   }

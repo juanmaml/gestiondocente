@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PrinterIcon } from "./icons";
 
 /**
  * Botón de imprimir. Mientras dura la impresión se retira la clase `dark`
@@ -30,7 +31,7 @@ export function PrintButton() {
       onClick={() => window.print()}
       className="btn-primary print:hidden"
     >
-      🖨️ Imprimir
+      <PrinterIcon /> Imprimir
     </button>
   );
 }

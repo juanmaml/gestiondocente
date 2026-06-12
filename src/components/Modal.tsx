@@ -4,10 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Spinner } from "./Spinner";
 import { useToast } from "./Toaster";
+import { XIcon } from "./icons";
 
 /**
- * Modal sencillo controlado por un botón disparador. El contenido se pasa como
- * children y recibe una función `close` para cerrar tras enviar formularios.
+ * Resultado opcional de una Server Action: si devuelve `{ error }`, el
+ * formulario lo muestra y no se cierra. Lanzar excepciones queda para fallos
+ * imprevistos (en producción Next.js oculta su mensaje, así que los errores
+ * esperados deben viajar como valor de retorno).
+ */
+export type ActionResult = { error: string } | void;
+
+/**
+ * Modal sobre <dialog> nativo: foco atrapado dentro, Esc para cerrar y
+ * devolución del foco al disparador la aporta el navegador. El contenido se
+ * pasa como children y recibe una función `close` para cerrar tras enviar
+ * formularios.
  */
 export function Modal({
   trigger,
@@ -19,44 +30,51 @@ export function Modal({
   children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDialogElement>(null);
 
+  // showModal() solo puede llamarse con el elemento ya montado.
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    if (open) document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    if (open && ref.current && !ref.current.open) ref.current.showModal();
   }, [open]);
 
   return (
     <>
       {trigger(() => setOpen(true))}
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 p-4 pt-[8vh]"
+        <dialog
+          ref={ref}
+          aria-label={title}
+          // El evento close cubre Esc y cualquier cierre nativo.
+          onClose={() => setOpen(false)}
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
+            // Un clic sobre el ::backdrop llega con el propio dialog como
+            // target; si cae fuera de la caja, se cierra.
+            const r = ref.current?.getBoundingClientRect();
+            if (
+              e.target === ref.current &&
+              r &&
+              (e.clientX < r.left ||
+                e.clientX > r.right ||
+                e.clientY < r.top ||
+                e.clientY > r.bottom)
+            ) {
+              ref.current?.close();
+            }
           }}
+          className="card mx-auto mt-[8vh] max-h-[84vh] w-full max-w-lg overflow-y-auto p-6 shadow-xl backdrop:bg-black/30"
         >
-          <div
-            ref={ref}
-            className="card w-full max-w-lg p-6 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-              <button
-                className="btn-ghost px-2 py-1"
-                onClick={() => setOpen(false)}
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-            </div>
-            {children(() => setOpen(false))}
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            <button
+              className="btn-ghost px-2 py-1"
+              onClick={() => ref.current?.close()}
+              aria-label="Cerrar"
+            >
+              <XIcon />
+            </button>
           </div>
-        </div>
+          {children(() => ref.current?.close())}
+        </dialog>
       )}
     </>
   );
@@ -64,7 +82,7 @@ export function Modal({
 
 /**
  * Formulario para usar dentro de un Modal. Ejecuta la Server Action y, solo si
- * termina sin lanzar error, cierra el modal. Evita el error
+ * termina sin error, cierra el modal. Evita el error
  * «Form submission canceled because the form is not connected» que provocaba
  * cerrar el modal en el onClick del botón (desmontaba el form antes de enviar).
  */
@@ -77,13 +95,13 @@ export function ModalForm({
   errorMessage = "No se pudo completar la acción. Inténtalo de nuevo.",
   validate,
 }: {
-  action: (formData: FormData) => Promise<void> | void;
+  action: (formData: FormData) => Promise<ActionResult> | ActionResult;
   close: () => void;
   className?: string;
   children: React.ReactNode;
   /** Toast de éxito tras guardar (si se omite, no se muestra). */
   successMessage?: string;
-  /** Toast de error si la acción falla; el modal queda abierto. */
+  /** Toast de error si la acción falla sin causa conocida; el modal queda abierto. */
   errorMessage?: string;
   /**
    * Validación previa al envío: si devuelve un texto, se muestra como error
@@ -100,10 +118,16 @@ export function ModalForm({
         const error = validate?.(formData) ?? null;
         setValidationError(error);
         if (error) return;
+        let result: ActionResult;
         try {
-          await action(formData);
+          result = await action(formData);
         } catch {
           toast.error(errorMessage);
+          return;
+        }
+        // Error esperado con causa: se muestra dentro del formulario.
+        if (result && result.error) {
+          setValidationError(result.error);
           return;
         }
         if (successMessage) toast.success(successMessage);

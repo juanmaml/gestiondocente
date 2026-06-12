@@ -25,7 +25,7 @@ export async function createScheduleEntryAction(formData: FormData) {
 
   // Verifica propiedad.
   const cls = await prisma.classGroup.findFirst({
-    where: { id: classGroupId, subject: { userId: user.id } },
+    where: { id: classGroupId, subject: { userId: user.id, deletedAt: null } },
   });
   if (!cls) throw new Error("Clase no encontrada.");
 

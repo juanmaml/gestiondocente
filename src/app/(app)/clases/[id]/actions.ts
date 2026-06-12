@@ -10,7 +10,7 @@ import { pendingConvivencias } from "@/lib/convivencia";
 /** Verifica que la clase pertenece al usuario; devuelve la clase o null. */
 async function ownClass(userId: string, classGroupId: string) {
   return prisma.classGroup.findFirst({
-    where: { id: classGroupId, subject: { userId } },
+    where: { id: classGroupId, subject: { userId, deletedAt: null } },
   });
 }
 

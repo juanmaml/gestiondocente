@@ -104,6 +104,7 @@ export function GroupGradesEditor({
                 min={0}
                 max={maxScore}
                 defaultValue={g.groupScore ?? ""}
+                aria-label={`Nota del grupo ${g.name}`}
                 className="input w-24 py-1"
                 placeholder={`/${maxScore}`}
               />
@@ -131,6 +132,7 @@ export function GroupGradesEditor({
                     min={0}
                     max={maxScore}
                     defaultValue={m.score ?? ""}
+                    aria-label={`Nota individual de ${m.name} en el grupo ${g.name}`}
                     className="input w-24 py-1"
                     placeholder="grupo"
                   />
